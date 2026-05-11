@@ -1,0 +1,819 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, Inter, sans-serif;
+        margin: 1cm;
+        color: #1d1d1f;
+        line-height: 1.75;
+      }
+
+      /* SECTION TITLE */
+
+      .section-title {
+        display: flex;
+        align-items: center;
+        font-size: 20px;
+        font-weight: 700;
+        margin-top: 36px;
+        margin-bottom: 22px;
+        letter-spacing: 0.6px;
+      }
+
+      .section-accent {
+        width: 5px;
+        height: 20px;
+        background: linear-gradient(180deg, #ff8c00, #ff6a00);
+        margin-right: 14px;
+        border-radius: 3px;
+      }
+
+      /* ── PAGE 1: COVER HERO + ATHLETE DETAILS + RECOMMENDATIONS ── */
+
+      .cover-hero {
+        background: linear-gradient(
+          135deg,
+          #0f172a 0%,
+          #1e293b 70%,
+          #334155 100%
+        );
+        color: #fff;
+        padding: 20px;
+        border-radius: 20px;
+        margin-bottom: 16px;
+        position: relative;
+        overflow: hidden;
+        box-shadow:
+          0 10px 25px -5px rgba(0, 0, 0, 0.1),
+          0 8px 10px -6px rgba(0, 0, 0, 0.1);
+      }
+
+      .cover-hero::before {
+        content: "";
+        position: absolute;
+        top: -50px;
+        right: -50px;
+        width: 250px;
+        height: 250px;
+        border-radius: 50%;
+        background: radial-gradient(
+          circle,
+          rgba(255, 140, 0, 0.15) 0%,
+          transparent 70%
+        );
+      }
+
+      .cover-report-badge {
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: #ff8c00;
+        margin-bottom: 8px;
+        opacity: 0.9;
+      }
+
+      .cover-athlete-name {
+        font-size: 32px;
+        font-weight: 800;
+        color: #ffffff;
+        letter-spacing: -1px;
+        margin-bottom: 8px;
+        line-height: 1.1;
+      }
+
+      .cover-sport-tag {
+        display: inline-block;
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: #ffb347;
+        font-size: 13px;
+        font-weight: 700;
+        padding: 6px 16px;
+        border-radius: 20px;
+        letter-spacing: 0.8px;
+        margin-top: 8px;
+      }
+
+      .profile-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin: 16px 0 0 0;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        padding-top: 16px;
+      }
+
+      .profile-card {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        padding: 8px 10px;
+      }
+
+      .profile-card-label {
+        font-size: 7px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.4);
+        margin-bottom: 2px;
+      }
+
+      .profile-card-value {
+        font-size: 13px;
+        font-weight: 800;
+        color: #ffffff;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      /* Athlete Details Card */
+      .athlete-details-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 16px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      }
+
+      .athlete-details-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: #111827;
+        margin: 0 0 12px 0;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #f3f4f6;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .athlete-details-title::before {
+        content: "";
+        display: inline-block;
+        width: 4px;
+        height: 16px;
+        background: linear-gradient(180deg, #ff8c00, #ff6a00);
+        border-radius: 2px;
+        flex-shrink: 0;
+      }
+
+      .athlete-details-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        column-gap: 24px;
+      }
+
+      .details-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 7px 0;
+        border-bottom: 1px solid #f3f4f6;
+      }
+
+      .details-row:last-child {
+        border-bottom: none;
+      }
+
+      .details-label {
+        font-size: 12px;
+        font-weight: 500;
+        color: #6b7280;
+      }
+
+      .details-value {
+        font-size: 12px;
+        font-weight: 700;
+        color: #111827;
+        text-align: right;
+        max-width: 55%;
+        word-break: break-word;
+      }
+
+      /* Recommendations Section */
+      .rec-section-title {
+        display: flex;
+        align-items: center;
+        font-size: 18px;
+        font-weight: 800;
+        letter-spacing: 0.5px;
+        margin-bottom: 12px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #f1f5f9;
+        color: #0f172a;
+      }
+
+      .section-accent-bar {
+        width: 6px;
+        min-width: 6px;
+        border-radius: 4px;
+        background: linear-gradient(180deg, #ff8c00, #ff6a00);
+        margin-right: 12px;
+        height: 24px;
+      }
+
+      .rec-box {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-left: 5px solid #ff8c00;
+        padding: 20px;
+        border-radius: 0 16px 16px 0;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+      }
+
+      .rec-text {
+        font-size: 13px;
+        line-height: 1.8;
+        color: #334155;
+      }
+
+      .rec-text ul,
+      .rec-text ol {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .rec-text li {
+        position: relative;
+        padding-left: 36px;
+        margin-bottom: 16px;
+      }
+
+      .rec-text li:last-child {
+        margin-bottom: 0;
+      }
+
+      /* Bullet points (ul) */
+      .rec-text ul li::before {
+        content: "";
+        position: absolute;
+        left: 10px;
+        top: 10px;
+        width: 8px;
+        height: 8px;
+        background: linear-gradient(135deg, #ff8c00, #ff6a00);
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(255, 140, 0, 0.3);
+      }
+
+      /* Numbered points (ol) */
+      .rec-text ol {
+        counter-reset: rec-counter;
+      }
+
+      .rec-text ol li::before {
+        counter-increment: rec-counter;
+        content: counter(rec-counter);
+        position: absolute;
+        left: 0;
+        top: -2px;
+        color: #ffffff;
+        background: linear-gradient(135deg, #ff8c00, #ff6a00);
+        font-weight: 800;
+        width: 24px;
+        height: 24px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        box-shadow: 0 2px 4px rgba(255, 140, 0, 0.25);
+      }
+
+      /* METRIC CARDS (COMPACT VERSION) */
+
+      .metric-card-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        margin-top: 18px;
+      }
+
+      .metric-card {
+        background: linear-gradient(180deg, #ffffff, #fafafa);
+        padding: 14px 12px;
+        border-radius: 12px;
+        text-align: center;
+        border: 1px solid #f1f1f1;
+        box-shadow:
+          0 1px 2px rgba(0, 0, 0, 0.03),
+          0 3px 8px rgba(0, 0, 0, 0.03);
+      }
+
+      .metric-big {
+        font-size: 17px;
+        font-weight: 700;
+      }
+
+      .metric-small {
+        font-size: 10px;
+        margin-top: 4px;
+        color: #8e8e93;
+      }
+
+      .recommendation-box {
+        background: #fff7f0;
+        border-left: 4px solid #ff8c00;
+        padding: 28px 30px;
+        border-radius: 16px;
+        font-size: 14px;
+      }
+
+      /* Each Recommendation Block */
+      .recommendation-item {
+        margin-bottom: 30px;
+      }
+
+      /* Heading Row */
+      .rec-heading {
+        display: flex;
+        align-items: baseline;
+        margin-bottom: 8px;
+        font-weight: 700;
+      }
+
+      /* Orange Number */
+      .rec-number {
+        color: #ff6a00;
+        font-size: 15px;
+        margin-right: 10px;
+      }
+
+      /* Title Text */
+      .rec-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: #1d1d1f;
+      }
+
+      /* Body Text */
+      .rec-body {
+        margin-left: 26px;
+        font-size: 14px;
+        line-height: 1.8;
+        color: #333;
+      }
+
+      /* ASSESSMENT SECTIONS - NARRATIVE FLOW */
+
+      .assessment-section {
+        margin-top: 40px;
+        page-break-inside: avoid;
+      }
+
+      .insight-box {
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 0;
+        border-left: 5px solid #ff8c00;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .insight-box::after {
+        content: "INSIGHTS";
+        position: absolute;
+        top: 10px;
+        right: 15px;
+        font-size: 24px;
+        font-weight: 900;
+        color: rgba(0, 0, 0, 0.03);
+        letter-spacing: 4px;
+      }
+
+      .interpretation {
+        font-size: 13px;
+        line-height: 1.8;
+        color: #334155;
+        position: relative;
+        z-index: 1;
+      }
+
+      .assessment-dashboard {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+        width: 100%;
+      }
+
+      .assessment-layout {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        align-items: start;
+      }
+
+      .col-left {
+        min-width: 0;
+      }
+
+      .col-right {
+        min-width: 0;
+      }
+
+      /* REDESIGNED METRIC STRIPS */
+
+      .metric-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 8px 10px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        break-inside: avoid;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+        margin-bottom: 0px;
+      }
+
+      .metric-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 4px;
+      }
+
+      .metric-name {
+        font-size: 9px;
+        font-weight: 800;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        white-space: normal;
+        line-height: 1.2;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+
+      .metric-unit {
+        font-size: 9px;
+        color: #94a3b8;
+        font-weight: 600;
+      }
+
+      .metric-body {
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+      }
+
+      .side-box {
+        display: flex;
+        align-items: baseline;
+        gap: 4px;
+      }
+
+      .side-label {
+        font-size: 8px;
+        font-weight: 700;
+        color: #94a3b8;
+        text-transform: uppercase;
+      }
+
+      .side-value {
+        font-size: 13px;
+        font-weight: 800;
+        color: #0f172a;
+      }
+
+      .asym-tag {
+        background: #fff7ed;
+        color: #ea580c;
+        font-size: 9px;
+        font-weight: 800;
+        padding: 2px 6px;
+        border-radius: 4px;
+        margin-left: auto;
+      }
+
+      .scalar-value {
+        font-size: 15px;
+        font-weight: 800;
+        color: #0f172a;
+      }
+
+      .group-divider {
+        grid-column: span 2;
+        font-size: 10px;
+        font-weight: 800;
+        color: #475569;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin-top: 16px;
+        margin-bottom: 4px;
+        padding: 4px 10px;
+        background: #f1f5f9;
+        border-radius: 4px;
+      }
+
+      /* DATA TABLE */
+
+      .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 11px;
+        margin-top: 6px;
+      }
+
+      .data-table th {
+        background: #fff3e0;
+        color: #7a3900;
+        font-weight: 700;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 7px 10px;
+        border: 1px solid #f0d5b8;
+        text-align: left;
+      }
+
+      .data-table td {
+        padding: 7px 10px;
+        border: 1px solid #ececec;
+        color: #333;
+        vertical-align: middle;
+      }
+
+      .data-table tr:nth-child(even) td {
+        background: #fafafa;
+      }
+
+      .data-table tr:hover td {
+        background: #fff8f0;
+      }
+
+      .data-table .group-header-row td {
+        background: #f5f5f5;
+        font-weight: 700;
+        font-size: 10px;
+        color: #555;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+        padding: 5px 10px;
+        border-top: 2px solid #e8e8e8;
+      }
+
+      .data-table .val-cell {
+        font-weight: 700;
+        color: #1d1d1f;
+      }
+
+      .data-table .empty-cell {
+        color: #ccc;
+        text-align: center;
+      }
+
+      .data-table .unit-cell {
+        color: #999;
+        font-size: 10px;
+      }
+
+      .source-badge {
+        display: inline-block;
+        padding: 1px 6px;
+        border-radius: 4px;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+      }
+
+      .source-vald {
+        background: #fff3cd;
+        color: #7a5c00;
+      }
+      .source-manual {
+        background: #e8f4f8;
+        color: #1a5276;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- ══════════════════════════════════════════════════
+     PAGE 1 — ATHLETE OVERVIEW + RECOMMENDATIONS
+════════════════════════════════════════════════════ -->
+
+    {% set athlete_name = data.profile.get("Athlete Name") or
+    data.profile.get("Name") or "—" %} {% set sport = data.profile.get("Sport")
+    or "" %} {% set age = data.profile.get("Age (years)") or
+    data.profile.get("Age") or "" %} {% set gender = data.profile.get("Gender")
+    or "" %} {% set dom_hand = data.profile.get("Dominant Hand") or "" %} {% set
+    dom_leg = data.profile.get("Dominant Leg") or "" %} {% set height =
+    data.profile.get("Height (cm) - Self Reported") or
+    data.profile.get("Height") or "" %} {% set weight = data.profile.get("Weight
+    (kg) - Self Reported") or data.profile.get("Weight") or "" %} {% set bmi_val
+    = data.profile.get("BMI") or "" %} {% set dob = data.profile.get("Date of
+    Birth") or "" %} {% set contact = data.profile.get("Contact Number") or ""
+    %} {% set email = data.profile.get("Email") or "" %} {% set discipline =
+    data.profile.get("Discipline") or "" %} {% set level =
+    data.profile.get("Playing Level") or "" %} {% set yrs_playing =
+    data.profile.get("Years Playing") or "" %} {% set weekly_vol =
+    data.profile.get("Weekly Training/Practice Volume (hours/week)") or "" %} {%
+    set injury = data.profile.get("Current/Recent Injury") or "" %} {% set pref
+    = data.profile.get("Singles/Doubles Preference") or "" %} {% set style =
+    data.profile.get("Primary Strokes/Style") or "" %}
+
+    <div style="page-break-after: always">
+      <!-- COVER HERO -->
+      <div class="cover-hero">
+        <div class="cover-report-badge">
+          High Performance Athlete Assessment
+        </div>
+        <div class="cover-athlete-name">{{ athlete_name }}</div>
+        {% if sport or age or gender %}
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px">
+          {% if sport %}
+          <div class="cover-sport-tag">{{ sport }}</div>
+          {% endif %} {% if age %}
+          <div class="cover-sport-tag">{{ age }} yrs</div>
+          {% endif %} {% if gender%}
+          <div class="cover-sport-tag">{{ gender }}</div>
+          {% endif %}
+        </div>
+        {% endif %}
+
+        <div class="profile-grid">
+          {% if height %}
+          <div class="profile-card">
+            <div class="profile-card-label">Height</div>
+            <div class="profile-card-value">{{ height }} cm</div>
+          </div>
+          {% endif %} {% if weight %}
+          <div class="profile-card">
+            <div class="profile-card-label">Weight</div>
+            <div class="profile-card-value">{{ weight }} kg</div>
+          </div>
+          {% endif %} {% if age %}
+          <div class="profile-card">
+            <div class="profile-card-label">Age</div>
+            <div class="profile-card-value">{{ age }} yrs</div>
+          </div>
+          {% endif %} {% if gender %}
+          <div class="profile-card">
+            <div class="profile-card-label">Gender</div>
+            <div class="profile-card-value">{{ gender }}</div>
+          </div>
+          {% endif %} {% if dob %}
+          <div class="profile-card">
+            <div class="profile-card-label">D.O.B</div>
+            <div class="profile-card-value">{{ dob }}</div>
+          </div>
+          {% endif %} {% if dom_hand %}
+          <div class="profile-card">
+            <div class="profile-card-label">Hand</div>
+            <div class="profile-card-value">{{ dom_hand }}</div>
+          </div>
+          {% endif %} {% if dom_leg %}
+          <div class="profile-card">
+            <div class="profile-card-label">Leg</div>
+            <div class="profile-card-value">{{ dom_leg }}</div>
+          </div>
+          {% endif %} {% if discipline %}
+          <div class="profile-card">
+            <div class="profile-card-label">Discipline</div>
+            <div class="profile-card-value">{{ discipline }}</div>
+          </div>
+          {% endif %} {% if level %}
+          <div class="profile-card">
+            <div class="profile-card-label">Level</div>
+            <div class="profile-card-value">{{ level }}</div>
+          </div>
+          {% endif %} {% if yrs_playing %}
+          <div class="profile-card">
+            <div class="profile-card-label">Experience</div>
+            <div class="profile-card-value">{{ yrs_playing }} yrs</div>
+          </div>
+          {% endif %} {% if weekly_vol %}
+          <div class="profile-card">
+            <div class="profile-card-label">Weekly Vol</div>
+            <div class="profile-card-value">{{ weekly_vol }} hrs</div>
+          </div>
+          {% endif %} {% if injury %}
+          <div class="profile-card">
+            <div class="profile-card-label">Injury</div>
+            <div class="profile-card-value">{{ injury }}</div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      <div>
+        <div class="rec-section-title">
+          <div class="section-accent-bar" style="height: 20px"></div>
+          Overall Recommendations
+        </div>
+        <div class="rec-box">
+          <div class="rec-text">
+            {% if data.get("final_recommendations") %} {{
+            data.get("final_recommendations") | safe }} {% else %} No final
+            recommendations provided. {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {% for section, entries in data.assessments.items() %} {% if section.lower()
+    != "vald raw data" %} {% set valid_entries = [] %} {% for entry in entries
+    %} {% set label = entry.get("Test Name") or entry.get("Metric Name") %} {%
+    if label and ( entry.get("Value") is not none or entry.get("Left") is not
+    none or entry.get("Right") is not none or entry.get("Asymmetry") is not none
+    ) %} {% set _ = valid_entries.append(entry) %} {% endif %} {% endfor %} {%
+    if valid_entries or data.interpretations.get(section) %}
+
+    <div class="assessment-section" style="page-break-before: always">
+      <div class="section-title">
+        <div class="section-accent"></div>
+        {{ section }}
+      </div>
+
+      <div class="assessment-layout">
+        <!-- Narrative Insights -->
+        <div class="col-left">
+          <div class="insight-box">
+            <div class="interpretation">
+              {% if data.interpretations.get(section) %} {{
+              data.interpretations.get(section) | safe }} {% else %}
+              <p style="color: #94a3b8; font-style: italic">
+                No technical interpretation provided for this section.
+              </p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Performance Dashboard -->
+        <div class="col-right">
+          {% if valid_entries %}
+          <div class="assessment-dashboard">
+            {% set last_group = namespace(val="") %} {% for entry in
+            valid_entries %} {% set label = entry.get("Test Name") or
+            entry.get("Metric Name") %} {% set grp = entry.get("Test Group") or
+            "" %} {% set unit = entry.get("Unit", "") %} {# Group Divider #} {%
+            if grp and (grp != last_group.val or loop.first) %} {% set
+            last_group.val = grp %}
+            <div class="group-divider">{{ grp }}</div>
+            {% endif %}
+
+            <div class="metric-card">
+              <div class="metric-header">
+                <span class="metric-name" title="{{ label }}">{{ label }}</span>
+                {% if unit %}<span class="metric-unit">{{ unit }}</span>{% endif
+                %}
+              </div>
+              <div class="metric-body">
+                {% if entry.get("Left") is not none or entry.get("Right") is not
+                none %}
+                <div class="side-box">
+                  <span class="side-label">L</span>
+                  <span class="side-value"
+                    >{{ entry.get("Left") if entry.get("Left") is not none else
+                    "—" }}</span
+                  >
+                </div>
+                <div class="side-box">
+                  <span class="side-label">R</span>
+                  <span class="side-value"
+                    >{{ entry.get("Right") if entry.get("Right") is not none
+                    else "—" }}</span
+                  >
+                </div>
+                {% if entry.get("Asymmetry") is not none %}
+                <div class="asym-tag">{{ entry.get("Asymmetry") }}</div>
+                {% endif %} {% else %}
+                <div class="scalar-value">
+                  {{ entry.get("Value") if entry.get("Value") is not none else
+                  "—" }}
+                </div>
+                {% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    {% endif %} {% endif %} {% endfor %}
+  </body>
+</html>

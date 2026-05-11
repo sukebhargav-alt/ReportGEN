@@ -1,0 +1,1569 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, Inter, sans-serif;
+        margin: 0;
+        color: #1d1d1f;
+        line-height: 1.6;
+        font-size: 14px;
+      }
+
+      /* ── PROFILING STYLE SYNC ── */
+      .rec-section-title {
+        display: flex;
+        align-items: center;
+        font-size: 18px;
+        font-weight: 800;
+        letter-spacing: 0.5px;
+        margin-bottom: 12px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #f1f5f9;
+        color: #0f172a;
+        margin-top: 24px;
+      }
+
+      .rec-box {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-left: 5px solid #ff8c00;
+        padding: 20px;
+        border-radius: 0 16px 16px 0;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        margin-bottom: 30px;
+      }
+
+      .rec-text {
+        font-size: 13px;
+        line-height: 1.4;
+        color: #334155;
+      }
+
+      .rec-text ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .rec-text li {
+        position: relative;
+        padding-left: 28px;
+        margin-bottom: 6px;
+      }
+
+      .rec-text ul li::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 8px;
+        width: 8px;
+        height: 8px;
+        background: linear-gradient(135deg, #ff8c00, #ff6a00);
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(255, 140, 0, 0.3);
+      }
+      /* ── END SYNC ── */
+
+      /* ── SHARED UTILITIES ─────────────────────────────────────────────────── */
+
+      .page-break {
+        page-break-before: always;
+      }
+
+      .section-accent-bar {
+        width: 6px;
+        min-width: 6px;
+        border-radius: 4px;
+        background: linear-gradient(180deg, #ff8c00, #ff6a00);
+        margin-right: 12px;
+        height: 24px;
+      }
+
+      .section-heading {
+        display: flex;
+        align-items: center;
+        font-size: 18px;
+        font-weight: 800;
+        letter-spacing: 0.4px;
+        margin-bottom: 8px;
+        margin-top: 0;
+      }
+
+      /* ── PAGE 1: ATHLETE DETAILS + FINAL RECOMMENDATIONS ─────────────────── */
+
+      .cover-hero {
+        background: linear-gradient(
+          135deg,
+          #0f172a 0%,
+          #1e293b 60%,
+          #0f172a 100%
+        );
+        color: #fff;
+        padding: 8px;
+        border-radius: 16px;
+        margin-bottom: 8px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .cover-hero::before {
+        content: "";
+        position: absolute;
+        top: -40px;
+        right: -40px;
+        width: 200px;
+        height: 200px;
+        border-radius: 50%;
+        background: rgba(255, 140, 0, 0.15);
+      }
+
+      .cover-report-badge {
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 2.5px;
+        text-transform: uppercase;
+        color: #ff8c00;
+        margin-bottom: 8px;
+      }
+
+      .cover-athlete-name {
+        font-size: 36px;
+        font-weight: 800;
+        color: #ffffff;
+        letter-spacing: -0.5px;
+        margin-bottom: 8px;
+      }
+
+      .cover-sport-tag {
+        display: inline-block;
+        background: rgba(255, 140, 0, 0.2);
+        border: 1px solid rgba(255, 140, 0, 0.4);
+        color: #ffb347;
+        font-size: 14px;
+        font-weight: 600;
+        padding: 8px;
+        border-radius: 20px;
+        letter-spacing: 0.5px;
+        margin-top: 8px;
+      }
+
+      .profile-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+
+      .profile-card {
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 8px;
+      }
+
+      .profile-card-label {
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: #9ca3af;
+        margin-bottom: 8px;
+      }
+
+      .profile-card-value {
+        font-size: 16px;
+        font-weight: 700;
+        color: #111827;
+      }
+
+      .profile-card.highlight .profile-card-value {
+        color: #c2410c;
+      }
+
+      /* Athlete Details Redesign */
+      .athlete-details-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 8px;
+        margin-bottom: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      }
+
+      .athlete-details-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 8px;
+        margin-top: 0;
+      }
+
+      .athlete-details-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        column-gap: 8px;
+      }
+
+      .details-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid #f3f4f6;
+      }
+
+      .details-row:last-child {
+        border-bottom: none;
+      }
+
+      .details-label {
+        font-size: 14px;
+        font-weight: 500;
+        color: #4b5563;
+      }
+
+      .details-value {
+        font-size: 14px;
+        font-weight: 700;
+        color: #111827;
+        text-align: right;
+      }
+
+      /* Final Recommendations */
+
+      .rec-section-title {
+        display: flex;
+        align-items: center;
+        font-size: 18px;
+        font-weight: 800;
+        letter-spacing: 0.3px;
+        margin-bottom: 8px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #f3f4f6;
+      }
+
+      .rec-box {
+        background: linear-gradient(135deg, #fff7ed 0%, #fff 60%);
+        border-left: 4px solid #ff8c00;
+        padding: 8px;
+        border-radius: 0 8px 8px 0;
+      }
+
+      .rec-text {
+        font-size: 14px;
+        line-height: 1.6;
+        color: #374151;
+        white-space: pre-wrap;
+      }
+
+      /* ── PAGE 2: OVERALL INTERPRETATION ──────────────────────────────────── */
+
+      .overall-page {
+        padding: 0;
+      }
+
+      .overall-hero-banner {
+        background: linear-gradient(
+          135deg,
+          #4c1d95 0%,
+          #5b21b6 50%,
+          #4c1d95 100%
+        );
+        color: #fff;
+        padding: 8px;
+        border-radius: 8px;
+        margin-bottom: 8px;
+      }
+
+      .overall-hero-label {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: #c4b5fd;
+        margin-bottom: 8px;
+      }
+
+      .overall-hero-title {
+        font-size: 18px;
+        font-weight: 800;
+        color: #fff;
+        letter-spacing: -0.3px;
+      }
+
+      .overall-content {
+        background: #fafafa;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 12px;
+        font-size: 11px;
+        line-height: 1.6;
+        color: #374151;
+      }
+
+      .overall-content h1,
+      .overall-content h2,
+      .overall-content h3,
+      .overall-content h4 {
+        color: #1e1b4b;
+        font-size: 13px;
+        margin-top: 6px;
+        margin-bottom: 6px;
+        font-weight: 700;
+      }
+
+      .overall-content p {
+        margin: 0 0 8px;
+      }
+
+      .overall-content strong {
+        font-weight: 700;
+        color: #1d1d1f;
+      }
+
+      .overall-content ol,
+      .overall-content ul {
+        padding-left: 8px;
+        margin: 8px 0 8px;
+      }
+
+      .overall-content li {
+        margin-bottom: 8px;
+      }
+
+      /* ── PAGES 3-6: SYSTEM SECTIONS (2-COLUMN LAYOUT) ────────────────────── */
+
+      .system-page-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 8px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #f3f4f6;
+      }
+
+      .system-page-header-accent {
+        width: 6px;
+        height: 44px;
+        border-radius: 4px;
+        margin-right: 8px;
+        flex-shrink: 0;
+      }
+
+      .system-page-header-title {
+        font-size: 18px;
+        font-weight: 800;
+        color: #111827;
+        letter-spacing: -0.2px;
+      }
+
+      .system-page-header-subtitle {
+        font-size: 10px;
+        color: #6b7280;
+        font-weight: 500;
+        margin-top: 8px;
+      }
+
+      /* Two-column layout */
+      .two-col-layout {
+        display: grid;
+        grid-template-columns: 43% 55%;
+        gap: 8px;
+        align-items: stretch;
+        margin-bottom: 12px;
+      }
+
+      /* Left column: Insight content */
+      .col-content {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+      }
+
+      .insight-card {
+        background: #fdfdfd;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 10px;
+        font-size: 12px;
+        line-height: 1.6;
+        color: #374151;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .insight-card-label {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: #9ca3af;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .insight-card-label::before {
+        content: "";
+        display: inline-block;
+        width: 18px;
+        height: 2px;
+        background: #d1d5db;
+        border-radius: 2px;
+      }
+
+      .insight-card h1,
+      .insight-card h2,
+      .insight-card h3,
+      .insight-card h4 {
+        color: #111827;
+        margin: 8px 0 8px;
+        font-weight: 700;
+        font-size: 16px;
+      }
+
+      .insight-card p {
+        margin: 0 0 9px;
+      }
+
+      .insight-card strong {
+        font-weight: 700;
+        color: #1d1d1f;
+      }
+
+      .insight-card ol,
+      .insight-card ul {
+        padding-left: 8px;
+        margin: 8px 0 8px;
+      }
+
+      .insight-card li {
+        margin-bottom: 8px;
+      }
+
+      /* Right column: Charts + Metrics Layout */
+      .col-graphs {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        gap: 8px;
+      }
+
+      /* Right column: Graphs + Metrics */
+
+      .chart-block {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 4px;
+        margin-bottom: 4px;
+        text-align: center;
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+
+      .chart-block img {
+        max-width: 100%;
+        height: auto;
+        max-height: 155px;
+        object-fit: contain;
+        border-radius: 6px;
+        display: block;
+        margin: 0 auto;
+      }
+
+      .chart-caption {
+        font-size: 9px;
+        font-weight: 800;
+        color: #9ca3af;
+        margin-top: 4px;
+        font-style: italic;
+        text-align: center;
+      }
+
+      /* Key Metrics */
+      .metrics-label {
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: #9ca3af;
+        margin: 4px 0 4px;
+        padding-left: 8px;
+      }
+
+      .metric-pill-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 8px;
+        margin-bottom: 8px;
+      }
+
+      .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+
+      .metric-pill-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+
+      .metric-pill-title {
+        font-weight: 700;
+        font-size: 12px;
+        color: #111;
+      }
+
+      .metric-pill-unit {
+        background: #f3f4f6;
+        color: #6b7280;
+        font-size: 10px;
+        font-weight: 600;
+        padding: 8px;
+        border-radius: 5px;
+      }
+
+      .metric-pill-values {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .metric-pill-item {
+        display: flex;
+        align-items: stretch;
+        background: #fafafa;
+        border: 1px solid #e5e7eb;
+        border-radius: 5px;
+        overflow: hidden;
+        font-size: 14px;
+      }
+
+      .metric-pill-key {
+        background: #f3f4f6;
+        font-weight: 600;
+        color: #6b7280;
+        padding: 8px;
+        border-right: 1px solid #e0e0e0;
+      }
+
+      .metric-pill-val {
+        background: #fff;
+        font-weight: 700;
+        color: #222;
+        padding: 8px;
+      }
+
+      /* Accent colours per section */
+      .accent-ventilation {
+        background: linear-gradient(180deg, #3b82f6, #1d4ed8);
+      }
+      .accent-cardiovascular {
+        background: linear-gradient(180deg, #ef4444, #b91c1c);
+      }
+      .accent-perfusion {
+        background: linear-gradient(180deg, #10b981, #047857);
+      }
+      .accent-metabolic {
+        background: linear-gradient(180deg, #8b5cf6, #6d28d9);
+      }
+
+      /* ── GAUGE BAR ─────────────────────────────────────────────────────────── */
+
+      .gauge-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 4px 8px;
+        margin-bottom: 4px;
+      }
+      .gauge-top-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 8px;
+      }
+      .gauge-label {
+        font-size: 14px;
+        font-weight: 700;
+        color: #111827;
+      }
+      .gauge-value-line {
+        font-size: 18px;
+        font-weight: 800;
+        color: #111827;
+        letter-spacing: -0.4px;
+        margin-bottom: 8px;
+      }
+      .gauge-sub-label {
+        font-size: 8px;
+        color: #9ca3af;
+        margin-bottom: 4px;
+      }
+      .gauge-category-badge {
+        font-size: 8px;
+        font-weight: 800;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        padding: 4px 8px;
+        border-radius: 12px;
+      }
+      .gauge-labels-row {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 4px;
+      }
+      .gauge-range-label {
+        font-size: 8px;
+        color: #9ca3af;
+        text-align: center;
+        flex: 1;
+      }
+      .badge-poor {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+      .badge-fair {
+        background: #fef9c3;
+        color: #854d0e;
+      }
+      .badge-good {
+        background: #dcfce7;
+        color: #166534;
+      }
+      .badge-excellent {
+        background: #dbeafe;
+        color: #1e40af;
+      }
+      .badge-superior {
+        background: #ede9fe;
+        color: #5b21b6;
+      }
+      /* Highlight badges */
+      .hl-low {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+      .hl-moderate {
+        background: #fef9c3;
+        color: #854d0e;
+      }
+      .hl-optimal {
+        background: #dcfce7;
+        color: #166534;
+      }
+      .hl-high {
+        background: #dbeafe;
+        color: #1e40af;
+      }
+
+      .gauge-bar {
+        display: flex;
+        height: 14px;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-top: 4px;
+      }
+      .gauge-seg {
+        flex: 1;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 8px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+      .gseg-poor,
+      .gseg-low {
+        background: #ef4444;
+        color: #7f1d1d;
+      }
+      .gseg-fair,
+      .gseg-moderate {
+        background: #f59e0b;
+        color: #78350f;
+      }
+      .gseg-good,
+      .gseg-optimal {
+        background: #22c55e;
+        color: #14532d;
+      }
+      .gseg-excellent {
+        background: #3b82f6;
+        color: #1e3a8a;
+      }
+      .gseg-superior,
+      .gseg-high {
+        background: #8b5cf6;
+        color: #4c1d95;
+      }
+      /* Specific superior color from image - Updated Focus: Vivid/High Contrast */
+      .gseg-superior {
+        background: #059669 !important; /* Emerald */
+        color: #fff !important;
+      }
+      .gseg-excellent {
+        background: #2563eb !important; /* Royal Blue */
+        color: #fff !important;
+      }
+      .gseg-good {
+        background: #65a30d !important; /* Lime Green */
+        color: #fff !important;
+      }
+      .gseg-fair {
+        background: #d97706 !important; /* Amber/Orange */
+        color: #fff !important;
+      }
+      .gseg-poor {
+        background: #dc2626 !important; /* Red */
+        color: #fff !important;
+      }
+
+      /* Integrated Pointer */
+      .marker-container {
+        position: relative;
+        height: 16px;
+        margin-top: 4px;
+      }
+      .marker-pointer {
+        position: absolute;
+        bottom: -2px;
+        width: 1px;
+        height: 12px;
+        background: #f97316;
+        z-index: 10;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .marker-pointer::before {
+        content: "▼";
+        color: #f97316;
+        font-size: 8px;
+        position: absolute;
+        top: -8px;
+        line-height: 1;
+      }
+      .marker-label {
+        position: absolute;
+        top: -18px;
+        font-size: 7px;
+        font-weight: 800;
+        color: #f97316;
+        white-space: nowrap;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      /* ── HIGHLIGHT CARD ─────────────────────────────────────────────────── */
+
+      .hl-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 4px 8px;
+        margin-bottom: 4px;
+      }
+      .hl-top-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 6px;
+      }
+      .hl-label {
+        font-size: 14px;
+        font-weight: 700;
+        color: #111827;
+      }
+      .hl-value-line {
+        font-size: 18px;
+        font-weight: 800;
+        color: #111827;
+        margin-bottom: 6px;
+      }
+      .hl-status-badge {
+        font-size: 8px;
+        font-weight: 800;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        padding: 4px 8px;
+        border-radius: 12px;
+      }
+      .hl-low {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+      .hl-moderate {
+        background: #fef9c3;
+        color: #854d0e;
+      }
+      .hl-optimal {
+        background: #dcfce7;
+        color: #166534;
+      }
+      .hl-high {
+        background: #dbeafe;
+        color: #1e40af;
+      }
+      .hl-excellent {
+        background: #dbeafe;
+        color: #1e40af;
+      }
+      .hl-superior {
+        background: #ede9fe;
+        color: #5b21b6;
+      }
+
+      .hl-range-bar {
+        display: flex;
+        height: 14px;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-top: 4px;
+      }
+      .hl-seg {
+        flex: 1;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 8px;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+      .hl-range-label {
+        font-size: 8px;
+        color: #9ca3af;
+        font-weight: 500;
+      }
+
+      /* HR Zones Table */
+      .hr-zones-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 16px;
+        margin-bottom: 24px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      .hr-zones-table th {
+        background: #f8fafc;
+        padding: 10px 12px;
+        text-align: left;
+        font-size: 11px;
+        font-weight: 700;
+        color: #475569;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 1px solid #e5e7eb;
+      }
+      .hr-zones-table td {
+        padding: 10px 12px;
+        font-size: 13px;
+        color: #1e293b;
+        border-bottom: 1px solid #f1f5f9;
+      }
+      .hr-zones-table tr:last-child td {
+        border-bottom: none;
+      }
+      .hr-zones-table .zone-cell {
+        font-weight: 800;
+        color: #0f172a;
+      }
+      .hr-zones-table .range-cell {
+        font-weight: 600;
+        color: #ff8c00;
+      }
+
+      /* ── PERFORMANCE HIGHLIGHT PAGES ─────────────────────────────────────── */
+      .highlights-page {
+        padding: 0;
+      }
+      .highlights-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .highlight-chart-block {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 16px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      }
+      .highlight-chart-title {
+        font-size: 16px;
+        font-weight: 800;
+        color: #111827;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border-bottom: 1px solid #f3f4f6;
+        padding-bottom: 8px;
+      }
+      .highlight-chart-title::before {
+        content: "";
+        width: 4px;
+        height: 20px;
+        background: #ff8c00;
+        border-radius: 2px;
+      }
+      .highlight-img-container {
+        text-align: center;
+        width: 100%;
+      }
+      .highlight-img-container img {
+        max-width: 100%;
+        max-height: 220px;
+        object-fit: contain;
+      }
+      .highlight-interpretation {
+        margin-top: 12px;
+        padding: 12px;
+        background: #f0f9ff;
+        border-radius: 8px;
+        border: 1px solid #bae6fd;
+        font-size: 11px;
+        line-height: 1.5;
+        color: #0369a1;
+      }
+      .highlight-interpretation p {
+        margin: 0 0 8px;
+      }
+      .highlight-interpretation p:last-child {
+        margin-bottom: 0;
+      }
+      .highlight-interpretation h1,
+      .highlight-interpretation h2,
+      .highlight-interpretation h3,
+      .highlight-interpretation h4 {
+        color: #0c4a6e;
+        font-size: 12px;
+        margin-top: 4px;
+        margin-bottom: 4px;
+        font-weight: 800;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- ══════════════════════════════════════════════════════════════════════
+     PAGE 1 – ATHLETE DETAILS + FINAL RECOMMENDATIONS
+════════════════════════════════════════════════════════════════════════ -->
+
+    <div class="cover-page">
+      <div class="athlete-details-card">
+        <h3 class="athlete-details-title">Athlete Details</h3>
+        <div class="athlete-details-grid">
+          <!-- Left Column -->
+          <div class="details-column">
+            <div class="details-row">
+              <span class="details-label">First Name</span>
+              <span class="details-value"
+                >{{ data.profile.get("First Name", "—") }}</span
+              >
+            </div>
+            <div class="details-row">
+              <span class="details-label">Gender</span>
+              <span class="details-value"
+                >{{ data.profile.get("Gender", "—") }}</span
+              >
+            </div>
+            {% set height = data.profile.get("Height (cm)",
+            data.profile.get("Height", "")) %}
+            <div class="details-row">
+              <span class="details-label">Height</span>
+              <span class="details-value"
+                >{% if height %}{{ height }} cm{% else %}—{% endif %}</span
+              >
+            </div>
+            {% set bmi_val = data.profile.get("BMI (kg/m2)",
+            data.profile.get("BMI", "")) %}
+            <div class="details-row">
+              <span class="details-label">BMI</span>
+              <span class="details-value">{{ bmi_val or "—" }}</span>
+            </div>
+            {% set duration_val = data.profile.get("Exercise Duration", "") %}
+            <div class="details-row">
+              <span class="details-label">Exercise Duration</span>
+              <span class="details-value">{{ duration_val or "—" }}</span>
+            </div>
+            <div class="details-row">
+              <span class="details-label">Injuries</span>
+              <span class="details-value"
+                >{{ data.profile.get("Injuries", "None") }}</span
+              >
+            </div>
+          </div>
+
+          <!-- Right Column -->
+          <div class="details-column">
+            <div class="details-row">
+              <span class="details-label">Last Name</span>
+              <span class="details-value"
+                >{{ data.profile.get("Last Name", "—") }}</span
+              >
+            </div>
+            <div class="details-row">
+              <span class="details-label">Age</span>
+              <span class="details-value">
+                {{ data.profile.get("Age", "—") | int }}{% if
+                data.profile.get("Age") %} yrs{% endif %}
+              </span>
+            </div>
+            {% set weight = data.profile.get("Weight (kg)",
+            data.profile.get("Weight", "")) %}
+            <div class="details-row">
+              <span class="details-label">Weight</span>
+              <span class="details-value"
+                >{% if weight %}{{ weight }} kg{% else %}—{% endif %}</span
+              >
+            </div>
+            <div class="details-row">
+              <span class="details-label">Protocol & HR Max</span>
+              <span class="details-value">
+                {% set protocol_val = data.profile.get("Protocol", "") %} {% set
+                hrmax_val = data.profile.get("HR Max", "") %} {% if protocol_val
+                %}Protocol: {{ protocol_val }}{% endif %} {% if protocol_val and
+                hrmax_val %} | {% endif %} {% if hrmax_val %}HR Max: {{
+                hrmax_val }}{% endif %} {% if not protocol_val and not hrmax_val
+                %}—{% endif %}
+              </span>
+            </div>
+            <div class="details-row">
+              <span class="details-label">Sport</span>
+              <span class="details-value"
+                >{{ data.profile.get("Sport", "—") }}</span
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Final Recommendations -->
+      <!-- HR Zones Section -->
+
+
+      <div>
+        <div class="rec-section-title">
+          <div class="section-accent-bar"></div>
+          Overall Recommendations
+        </div>
+        <div class="rec-box">
+          <div class="rec-text">
+            {% if data.get("final_recommendations") %} 
+              {{ data.get("final_recommendations") | safe }} 
+            {% else %} 
+              No final recommendations provided. 
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+     PAGE 2 – OVERALL INTERPRETATION
+════════════════════════════════════════════════════════════════════════ -->
+
+    <div
+      class="overall-page page-break"
+      style="margin-top: 8px; page-break-inside: avoid; break-inside: avoid"
+    >
+      <div class="overall-hero-banner">
+        <div class="overall-hero-title">Overall Interpretation</div>
+      </div>
+
+      {% if data.get("overall_interpretation") %}
+      <div class="overall-content">
+        {{ data.get("overall_interpretation") | safe }}
+      </div>
+      {% else %}
+      <div class="overall-content" style="color: #9ca3af; font-style: italic">
+        No overall interpretation was provided.
+      </div>
+      {% endif %}
+
+      {% if data.get("vo2_max_gauge") %}
+      <div class="gauge-card" style="margin-top: 16px; margin-bottom: 16px; page-break-inside: avoid;">
+        <div class="gauge-top-row">
+          <div class="gauge-label">Aerobic Capacity ({{ data.vo2_max_gauge.label }})</div>
+          <div class="gauge-category-badge badge-{{ data.vo2_max_gauge.category | lower }}">
+            {{ data.vo2_max_gauge.category }}
+          </div>
+        </div>
+        <div class="gauge-value-line">
+          {{ data.vo2_max_gauge.value }}
+          <span style="font-size: 10px; font-weight: 600; color: #6b7280">{{ data.vo2_max_gauge.unit }}</span>
+        </div>
+
+        <div class="gauge-bar-container" style="position: relative; margin-bottom: 12px;">
+          <div class="gauge-bar" style="height: 12px; border-radius: 6px;">
+            <div class="gauge-fill" style="left: {{ (data.vo2_max_gauge.position * 100) }}%; position: absolute; z-index: 10;">
+              <div class="gauge-indicator" style="width: 2px; height: 18px; background: #1f2937; position: absolute; top: -3px; left: -1px;"></div>
+            </div>
+            {% for z in data.vo2_max_gauge.zones %}
+            <div class="gauge-seg gseg-{{ z.lower() }}" style="font-size: 8px;">{{ z }}</div>
+            {% endfor %}
+          </div>
+          <div class="gauge-labels-row">
+            {% for rl in data.vo2_max_gauge.range_labels %}
+            <div class="gauge-range-label">{{ rl }}</div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+     PAGES 3-6 – SYSTEM SECTIONS  (left: content | right: graphs + metrics)
+     Rendered dynamically from data.sections[]
+════════════════════════════════════════════════════════════════════════ -->
+
+    {% for section in data.get("sections", []) %} {% if section.title ==
+    "Ventilation System" %} {% set accent_class = "accent-ventilation" %} {% set
+    subtitle = "VO2 · VCO2 · VE · Respiratory Frequency" %} {% elif
+    section.title == "Cardiovascular System" %} {% set accent_class =
+    "accent-cardiovascular" %} {% set subtitle = "Heart Rate · HR Reserve · O₂
+    Pulse · VO2/HR" %} {% elif section.title == "Ventilatory Perfusion" %} {%
+    set accent_class = "accent-perfusion" %} {% set subtitle = "VT1 · VT2 ·
+    PetO₂ · PetCO₂" %} {% elif section.title == "Metabolic Efficiency (RQ vs HR)" or section.title == "Metabolic System" %} {%
+    set accent_class = "accent-metabolic" %} {% set subtitle =
+    "Substrate Utilization · Crossover · Efficiency" %} {% else %} {% set
+    accent_class = "accent-metabolic" %} {% set subtitle = "RQ · EEh · METS ·
+    RER" %} {% endif %}
+
+    <div class="system-page page-break">
+      <!-- Section Header -->
+      <div class="system-page-header">
+        <div class="system-page-header-accent {{ accent_class }}"></div>
+        <div>
+          <div class="system-page-header-title">{{ section.title }}</div>
+          <div class="system-page-header-subtitle">{{ subtitle }}</div>
+        </div>
+      </div>
+
+      <!-- Two-column body -->
+      <div class="two-col-layout">
+        <!-- LEFT: Insight text -->
+        <div class="col-content">
+          <div class="insight-card">
+            {% if section.insight %} {{ section.insight | safe }} {% else %}
+            <p style="color: #9ca3af; font-style: italic">
+              No interpretation available.
+            </p>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- RIGHT: Charts + Key Metrics -->
+        <div class="col-graphs">
+          {# ── Gauge / Highlight metrics #} {% if section.metric_displays %}
+          <div class="metrics-label">Key Metrics</div>
+          {% for m in section.metric_displays[:3] %} {% if m.type == "gauge" %}
+          {# ── Gauge bar #} {% set cat_lower = m.category | lower %} {% set pct
+          = (m.position * 100) | round | int %}
+          <div class="gauge-card">
+            <div class="gauge-top-row">
+              <div class="gauge-label">{{ m.label }}</div>
+              <div class="gauge-category-badge badge-{{ cat_lower }}">
+                {{ m.category }}
+              </div>
+            </div>
+            <div class="gauge-value-line">
+              {{ m.value }}
+              <span style="font-size: 10px; font-weight: 600; color: #6b7280"
+                >{{ m.unit }}</span
+              >
+            </div>
+            <div class="marker-container">
+              <div class="marker-pointer" style="left: {{ [pct, 97] | min }}%;">
+                <div class="marker-label">You Are Here</div>
+              </div>
+            </div>
+            <div class="gauge-bar">
+              {% for z in m.zones %}
+              <div class="gauge-seg gseg-{{ z | lower }}">{{ z }}</div>
+              {% endfor %}
+            </div>
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                font-size: 8px;
+                color: #9ca3af;
+                margin-top: 4px;
+                padding: 0;
+                font-weight: 500;
+              "
+            >
+              {% for r in m.range_labels %}
+              <span style="flex: 1; text-align: center">{{ r }}</span>
+              {% endfor %}
+            </div>
+          </div>
+
+          {% elif m.type == "highlight" %} {# ── Highlight card #} {% set
+          st_lower = m.status | lower %}
+          <div class="hl-card">
+            <div class="hl-top-row">
+              <div class="hl-label">{{ m.label }}</div>
+              <div class="hl-status-badge badge-{{ m.status | lower }}">
+                {{ m.status }}
+              </div>
+            </div>
+            <div class="hl-value-line">
+              {{ m.value }}
+              <span style="font-size: 10px; font-weight: 600; color: #6b7280"
+                >{{ m.unit }}</span
+              >
+            </div>
+
+            <div class="marker-container">
+              <div
+                class="marker-pointer"
+                style="left: {{ m.position * 100 }}%;"
+              >
+                <div class="marker-label">You Are Here</div>
+              </div>
+            </div>
+
+            <div class="hl-range-bar">
+              {% for z in m.zones %}
+              <div class="hl-seg gseg-{{ z | lower }}">{{ z }}</div>
+              {% endfor %}
+            </div>
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                font-size: 8px;
+                color: #9ca3af;
+                margin-top: 4px;
+                padding: 0;
+                font-weight: 500;
+              "
+            >
+              {% if m.range_labels %} {% for r in m.range_labels %}
+              <span style="flex: 1; text-align: center">{{ r }}</span>
+              {% endfor %} {% else %}
+              <div class="hl-range-label">{{ m.range_label }}</div>
+              {% endif %}
+            </div>
+            </div>
+          </div>
+          {% elif m.type == "simple" %}
+          <div class="hl-card">
+            <div class="hl-top-row">
+              <div class="hl-label">{{ m.label }}</div>
+              <div class="hl-status-badge badge-{{ m.status | lower }}">
+                {{ m.status }}
+              </div>
+            </div>
+            <div class="hl-value-line" style="margin-bottom: 0;">
+              {{ m.value }}
+              <span style="font-size: 10px; font-weight: 600; color: #6b7280">{{ m.unit }}</span>
+            </div>
+            <div style="font-size: 9px; color: #6b7280; font-weight: 500; margin-top: 4px;">
+              {{ m.range_label }}
+            </div>
+          </div>
+          {% endif %} {% endfor %} {% endif %}
+          
+          {% if section.charts %}
+          {% for chart in section.charts[:3] %}
+          <div class="chart-block">
+            <img
+              src="data:image/png;base64,{{ chart.b64 }}"
+              alt="{{ chart.title }}"
+            />
+            <div class="chart-caption">{{ chart.title }}</div>
+          </div>
+          {% endfor %} {% endif %}
+          
+          {# ── Metabolic Table Placement ── #}
+          {% if (section.title == "Metabolic System" or section.title == "Metabolic Efficiency (RQ vs HR)") and data.rq_table %}
+          <div style="margin-top: 15px; width: 100%;">
+            {{ data.rq_table | safe }}
+          </div>
+          {% endif %}
+        </div>
+        <!-- /col-graphs -->
+      </div>
+      <!-- /two-col-layout -->
+    </div>
+    <!-- /system-page -->
+    {% endfor %}
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+     PAGE 7 – PERFORMANCE & TRAINING HIGHLIGHTS
+════════════════════════════════════════════════════════════════════════ -->
+
+    {% if data.get("performance_highlights") %}
+    <div class="highlights-page page-break">
+      <div class="system-page-header">
+        <div
+          class="system-page-header-accent"
+          style="
+            background: linear-gradient(180deg, #ff8c00, #ff6a00);
+            height: 44px;
+          "
+        ></div>
+        <div>
+          <div class="system-page-header-title">
+            Performance & Training Highlights
+          </div>
+          <div class="system-page-header-subtitle">
+            Key Physiological Breakthroughs & Metabolic Insights
+          </div>
+        </div>
+      </div>
+
+      <div class="highlights-grid">
+        {% for h in data.performance_highlights %} {# Page break after the
+        second chart #} {% if loop.index == 3 %}
+      </div>
+      <!-- Close grid -->
+    </div>
+    <!-- Close page -->
+
+    <div class="highlights-page page-break">
+      <div class="system-page-header">
+        <div
+          class="system-page-header-accent"
+          style="
+            background: linear-gradient(180deg, #ff8c00, #ff6a00);
+            height: 44px;
+          "
+        ></div>
+        <div>
+          <div class="system-page-header-title">
+            Performance & Training Highlights (Cont.)
+          </div>
+          <div class="system-page-header-subtitle">
+            Key Metabolic & Efficiency Insights
+          </div>
+        </div>
+      </div>
+      <div class="highlights-grid">
+        {% endif %}
+
+        <div class="highlight-chart-block">
+          <div class="highlight-chart-title">{{ h.title }}</div>
+          <div class="highlight-img-container">
+            <img src="data:image/png;base64,{{ h.b64 }}" alt="{{ h.title }}" />
+          </div>
+          {% if h.interpretation %}
+          <div class="highlight-interpretation">
+            {{ h.interpretation | safe }}
+          </div>
+          {% endif %}
+        </div>
+
+        {% if loop.last and data.hr_zones %}
+        <!-- ── HEART RATE TRAINING ZONES (server-side SVG) ───────────────── -->
+        <div class="highlight-chart-block" style="margin-top: 16px; page-break-inside: avoid; break-inside: avoid;">
+          <div class="highlight-chart-title">Heart Rate Training Zones</div>
+          <div style="display: flex; justify-content: center;">
+            <div style="width: 100%; max-width: 520px; overflow: hidden; height: 280px; position: relative;">
+              <svg id="hr-zones-svg"
+                   width="100%" height="560" viewBox="0 0 500 560"
+                   data-hrmax="{{ data.hr_zones.hr_max | round | int }}"
+                   data-vt1="{{ data.hr_zones.hr_vt1 if data.hr_zones.hr_vt1 is not none else '' }}"
+                   data-vt2="{{ data.hr_zones.hr_vt2 if data.hr_zones.hr_vt2 is not none else '' }}"
+                   style="display:block;">
+
+                <!-- ── Zone arcs: circumference=2π×175≈1099.56, halfC≈549.78 -->
+                <!-- rotate(180) starts the stroke at the leftmost point (50% HRmax) -->
+
+                <!-- Z1 Light  — 20% = 109.96 — blue -->
+                <circle cx="250" cy="280" r="175" fill="none" stroke="#7cb1ea" stroke-width="90"
+                  stroke-dasharray="109.96 1099.56" stroke-dashoffset="0"
+                  transform="rotate(180 250 280)"/>
+                <!-- Z2 Moderate — 30% = 164.93 — green; offset=109.96 -->
+                <circle cx="250" cy="280" r="175" fill="none" stroke="#8dc550" stroke-width="90"
+                  stroke-dasharray="164.93 1099.56" stroke-dashoffset="-109.96"
+                  transform="rotate(180 250 280)"/>
+                <!-- Z3 Vigorous — 20% = 109.96 — orange; offset=274.89 -->
+                <circle cx="250" cy="280" r="175" fill="none" stroke="#efa133" stroke-width="90"
+                  stroke-dasharray="109.96 1099.56" stroke-dashoffset="-274.89"
+                  transform="rotate(180 250 280)"/>
+                <!-- Z4 Hard — 20% = 109.96 — red; offset=384.85 -->
+                <circle cx="250" cy="280" r="175" fill="none" stroke="#e35156" stroke-width="90"
+                  stroke-dasharray="109.96 1099.56" stroke-dashoffset="-384.85"
+                  transform="rotate(180 250 280)"/>
+                <!-- Z5 Maximal — 10% = 54.98 — dark red; offset=494.81 -->
+                <circle cx="250" cy="280" r="175" fill="none" stroke="#a93031" stroke-width="90"
+                  stroke-dasharray="54.98 1099.56" stroke-dashoffset="-494.81"
+                  transform="rotate(180 250 280)"/>
+
+                <!-- ── VT markers injected by JS (drawn above white overlays) -->
+                <!-- White overlays applied first as background layers -->
+                <!-- Bottom-half mask -->
+                <rect x="0" y="280" width="500" height="280" fill="white"/>
+                <!-- Centre-hole mask -->
+                <circle cx="250" cy="280" r="130" fill="white"/>
+                <!-- Subtle inner-arc border (top half only) -->
+                <path d="M 120 280 A 130 130 0 0 1 380 280" fill="none" stroke="#e5e7eb" stroke-width="1.5"/>
+
+                <!-- VT marker layer (JS appends lines here, so they sit above masks) -->
+                <g id="vt-markers"></g>
+
+                <!-- ── Centre labels -->
+                <text x="250" y="258" text-anchor="middle"
+                      font-family="Inter,sans-serif" font-size="11"
+                      fill="#9ca3af" font-weight="600">HRmax</text>
+                <text x="250" y="276" text-anchor="middle"
+                      font-family="Inter,sans-serif" font-size="21"
+                      fill="#111827" font-weight="800">{{ data.hr_zones.hr_max | round | int }}</text>
+                <text x="250" y="289" text-anchor="middle"
+                      font-family="Inter,sans-serif" font-size="10"
+                      fill="#9ca3af" font-weight="500">bpm</text>
+
+                <!-- ── Zone name labels (positioned at arc midpoints, r≈155) -->
+                <!-- Z1 ~162°: x≈103, y≈232 -->
+                <text x="103" y="225" text-anchor="middle" font-family="Inter,sans-serif" font-size="12" fill="#1e3a8a" font-weight="700">Z1</text>
+                <text x="103" y="238" text-anchor="middle" font-family="Inter,sans-serif" font-size="9"  fill="#1e3a8a" font-weight="500">Light</text>
+                <!-- Z2 ~117°: x≈180, y≈141 -->
+                <text x="180" y="134" text-anchor="middle" font-family="Inter,sans-serif" font-size="12" fill="#14532d" font-weight="700">Z2</text>
+                <text x="180" y="147" text-anchor="middle" font-family="Inter,sans-serif" font-size="9"  fill="#14532d" font-weight="500">Moderate</text>
+                <!-- Z3 ~72°: x≈298, y≈132 -->
+                <text x="298" y="125" text-anchor="middle" font-family="Inter,sans-serif" font-size="12" fill="#6b3600" font-weight="700">Z3</text>
+                <text x="298" y="138" text-anchor="middle" font-family="Inter,sans-serif" font-size="9"  fill="#6b3600" font-weight="500">Vigorous</text>
+                <!-- Z4 ~36°: x≈375, y≈188 -->
+                <text x="375" y="181" text-anchor="middle" font-family="Inter,sans-serif" font-size="12" fill="white" font-weight="700">Z4</text>
+                <text x="375" y="194" text-anchor="middle" font-family="Inter,sans-serif" font-size="9"  fill="white" font-weight="500">Hard</text>
+                <!-- Z5 ~9°: x≈405, y≈255 -->
+                <text x="407" y="248" text-anchor="middle" font-family="Inter,sans-serif" font-size="12" fill="white" font-weight="700">Z5</text>
+                <text x="407" y="261" text-anchor="middle" font-family="Inter,sans-serif" font-size="9"  fill="white" font-weight="500">Max</text>
+
+                <!-- ── Percentage boundary tick labels (outer edge, r≈224) -->
+                <!-- 50% at 180°: x=26, y=280 -->
+                <text x="28"  y="278" text-anchor="middle" font-family="Inter,sans-serif" font-size="9.5" fill="#6b7280" font-weight="600">{{ (data.hr_zones.hr_max * 0.50) | round | int }}</text>
+                <!-- 60% at 144°: x≈68, y≈151 -->
+                <text x="68"  y="147" text-anchor="middle" font-family="Inter,sans-serif" font-size="9.5" fill="#6b7280" font-weight="600">{{ (data.hr_zones.hr_max * 0.60) | round | int }}</text>
+                <!-- 75% at 90°: x=250, y=56 -->
+                <text x="250" y="52"  text-anchor="middle" font-family="Inter,sans-serif" font-size="9.5" fill="#6b7280" font-weight="600">{{ (data.hr_zones.hr_max * 0.75) | round | int }}</text>
+                <!-- 85% at 54°: x≈381, y≈99 -->
+                <text x="381" y="95"  text-anchor="middle" font-family="Inter,sans-serif" font-size="9.5" fill="#6b7280" font-weight="600">{{ (data.hr_zones.hr_max * 0.85) | round | int }}</text>
+                <!-- 95% at 18°: x≈463, y≈211 -->
+                <text x="463" y="207" text-anchor="middle" font-family="Inter,sans-serif" font-size="9.5" fill="#6b7280" font-weight="600">{{ (data.hr_zones.hr_max * 0.95) | round | int }}</text>
+                <!-- 100% at 0°: x=474, y=280 -->
+                <text x="474" y="278" text-anchor="middle" font-family="Inter,sans-serif" font-size="9.5" fill="#6b7280" font-weight="600">{{ data.hr_zones.hr_max | round | int }}</text>
+              </svg>
+            </div>
+          </div>
+
+          <!-- VT1 / VT2 legend row -->
+          <div style="display:flex; gap:20px; justify-content:center; margin-top:6px;
+                      font-family:Inter,sans-serif; font-size:11px;">
+            <div id="vt1-legend" style="display:none; align-items:center; gap:6px;">
+              <div style="width:22px; border-top:2px dashed #065f46;"></div>
+              <span style="color:#065f46; font-weight:700;">VT1</span>
+              <span id="vt1-bpm" style="color:#6b7280; font-weight:500;"></span>
+            </div>
+            <div id="vt2-legend" style="display:none; align-items:center; gap:6px;">
+              <div style="width:22px; border-top:2px dashed #7f1d1d;"></div>
+              <span style="color:#7f1d1d; font-weight:700;">VT2</span>
+              <span id="vt2-bpm" style="color:#6b7280; font-weight:500;"></span>
+            </div>
+          </div>
+        </div>
+
+        <script>
+        (function () {
+          var svg    = document.getElementById('hr-zones-svg');
+          if (!svg) return;
+          var hrMax  = parseFloat(svg.getAttribute('data-hrmax'));
+          var vt1Raw = svg.getAttribute('data-vt1');
+          var vt2Raw = svg.getAttribute('data-vt2');
+          if (!hrMax || hrMax <= 0) return;
+
+          var markers = document.getElementById('vt-markers');
+          var NS = 'http://www.w3.org/2000/svg';
+          var CX = 250, CY = 280;
+          var INNER_R = 130, OUTER_R = 220;
+
+          function drawMarker(bpm, strokeColor, labelText, legendId, bpmId) {
+            var minHR = hrMax * 0.5;
+            var pct   = Math.max(0, Math.min(1, (bpm - minHR) / (hrMax - minHR)));
+            // 0% = left (angle PI), 100% = right (angle 0)
+            var angle = Math.PI - pct * Math.PI;
+            var cos   = Math.cos(angle), sin = Math.sin(angle);
+
+            var x1 = CX + cos * INNER_R,  y1 = CY - sin * INNER_R;
+            var x2 = CX + cos * OUTER_R,  y2 = CY - sin * OUTER_R;
+            // Only draw if in the visible top half
+            if (y1 > CY + 2 || y2 > CY + 2) return;
+
+            var line = document.createElementNS(NS, 'line');
+            line.setAttribute('x1', x1.toFixed(1));
+            line.setAttribute('y1', y1.toFixed(1));
+            line.setAttribute('x2', x2.toFixed(1));
+            line.setAttribute('y2', y2.toFixed(1));
+            line.setAttribute('stroke', strokeColor);
+            line.setAttribute('stroke-width', '2.5');
+            line.setAttribute('stroke-dasharray', '5 3');
+            markers.appendChild(line);
+
+            // Label beyond outer radius
+            var LR = OUTER_R + 20;
+            var lx = CX + cos * LR, ly = CY - sin * LR;
+            if (ly < CY) {
+              var txt = document.createElementNS(NS, 'text');
+              txt.setAttribute('x', lx.toFixed(1));
+              txt.setAttribute('y', (ly + 4).toFixed(1));
+              txt.setAttribute('text-anchor', 'middle');
+              txt.setAttribute('font-family', 'Inter,sans-serif');
+              txt.setAttribute('font-size', '11');
+              txt.setAttribute('font-weight', '800');
+              txt.setAttribute('fill', strokeColor);
+              txt.textContent = labelText;
+              markers.appendChild(txt);
+            }
+
+            // Show legend entry
+            var leg = document.getElementById(legendId);
+            if (leg) leg.style.display = 'flex';
+            var bpmEl = document.getElementById(bpmId);
+            if (bpmEl) bpmEl.textContent = '(' + Math.round(bpm) + ' bpm)';
+          }
+
+          if (vt1Raw && !isNaN(parseFloat(vt1Raw)))
+            drawMarker(parseFloat(vt1Raw), '#065f46', 'VT1', 'vt1-legend', 'vt1-bpm');
+          if (vt2Raw && !isNaN(parseFloat(vt2Raw)))
+            drawMarker(parseFloat(vt2Raw), '#7f1d1d', 'VT2', 'vt2-legend', 'vt2-bpm');
+        })();
+        </script>
+        {% endif %}
+
+        {% endfor %}
+      </div>
+    </div>
+    </div>
+    {% endif %}
+
+  </body>
+</html>

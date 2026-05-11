@@ -1,0 +1,25 @@
+*.log
+.DS_Store
+Thumbs.db
+
+# Local secrets
+.env
+.env.*
+!.env.example
+Backend.env
+Frontend.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Node
+node_modules/
+dist/
+dist-ssr/
+
+# Editors
+.vscode/
+.idea/
