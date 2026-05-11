@@ -3,6 +3,7 @@ services:
     name: acrophase-backend
     runtime: docker
     rootDir: acrophase-backend-main
+    dockerfilePath: ./Dockerfile
     plan: free
     healthCheckPath: /
     envVars:
