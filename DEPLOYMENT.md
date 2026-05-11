@@ -12,7 +12,7 @@ Use it for prototypes, demos, low-traffic internal use, and early client validat
 
 ## Recommended stack
 
-- Frontend: Vercel Hobby or Render Static Site
+- Frontend: Render Static Site
 - Backend: Render Web Service using Docker
 - Database: Supabase Postgres
 
@@ -49,32 +49,29 @@ After the Supabase tables exist and env vars are configured locally:
 python scripts/seed_admin_supabase.py
 ```
 
-## Render backend
+## Render deployment
 
-Create a Web Service:
+Use the repository's `render.yaml` Blueprint to deploy both services together:
 
-- Root directory: `acrophase-backend-main`
-- Runtime: Docker
-- Dockerfile path: `dockerfile`
-- Health check path: `/`
+1. Open Render Blueprints.
+2. Connect the GitHub repository.
+3. Select the `main` branch.
+4. Fill the prompted secret values.
 
-The Dockerfile starts FastAPI on port `9002`.
+The Blueprint creates:
 
-## Frontend
+- `acrophase-backend`: FastAPI Docker service
+- `acrophase-frontend`: Vite static site
 
-For Vercel or Render Static Site:
+The frontend gets `VITE_BACKEND_URL` automatically from the backend service's external URL. The backend gets `FRONTEND_ORIGINS` automatically from the frontend service's external URL.
 
-- Root directory: `acrophase-frontend-main`
-- Build command: `npm run build`
-- Output directory: `dist`
-
-Set:
+Prompted secret values:
 
 ```env
-VITE_BACKEND_URL=https://your-render-backend.onrender.com
+OPENAI_API_KEY=your-openai-api-key
+SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
+ADMIN_PASSWORD=change-this-before-deploying
 ```
-
-For local development, create `acrophase-frontend-main/.env` from `.env.example`.
 
 ## Required security cleanup
 

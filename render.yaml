@@ -9,17 +9,20 @@ services:
       - key: OPENAI_API_KEY
         sync: false
       - key: SUPABASE_URL
-        sync: false
+        value: https://jcjqskabyzuvcbsxlhhv.supabase.co
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
       - key: FRONTEND_ORIGINS
-        sync: false
+        fromService:
+          type: web
+          name: acrophase-frontend
+          envVarKey: RENDER_EXTERNAL_URL
       - key: ADMIN_EMAIL
-        sync: false
+        value: admin@acrophase.com
       - key: ADMIN_PASSWORD
         sync: false
       - key: ADMIN_FULL_NAME
-        sync: false
+        value: System Admin
 
   - type: web
     name: acrophase-frontend
@@ -34,4 +37,7 @@ services:
         destination: /index.html
     envVars:
       - key: VITE_BACKEND_URL
-        sync: false
+        fromService:
+          type: web
+          name: acrophase-backend
+          envVarKey: RENDER_EXTERNAL_URL
