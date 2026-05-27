@@ -19,10 +19,14 @@ class ValdSettings:
 
 
 def get_vald_settings() -> ValdSettings:
-    supabase_url = os.getenv("VALD_SUPABASE_URL") or os.getenv("SUPABASE_URL", "")
-    service_role_key = os.getenv("VALD_SUPABASE_SERVICE_ROLE_KEY") or os.getenv(
-        "SUPABASE_SERVICE_ROLE_KEY", ""
-    )
+    vald_supabase_url = os.getenv("VALD_SUPABASE_URL")
+    vald_service_role_key = os.getenv("VALD_SUPABASE_SERVICE_ROLE_KEY")
+    if vald_supabase_url or vald_service_role_key:
+        supabase_url = vald_supabase_url or ""
+        service_role_key = vald_service_role_key or ""
+    else:
+        supabase_url = os.getenv("SUPABASE_URL", "")
+        service_role_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
 
     settings = ValdSettings(
         client_id=os.getenv("VALD_CLIENT_ID", ""),
