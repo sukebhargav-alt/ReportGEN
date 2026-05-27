@@ -24,6 +24,20 @@ services:
         sync: false
       - key: ADMIN_FULL_NAME
         value: System Admin
+      - key: VALD_CLIENT_ID
+        sync: false
+      - key: VALD_CLIENT_SECRET
+        sync: false
+      - key: VALD_AUTH_URL
+        value: https://auth.prd.vald.com/oauth/token
+      - key: VALD_AUDIENCE
+        value: vald-api-external
+      - key: VALD_REGION
+        value: aue
+      - key: VALD_SUPABASE_URL
+        value: https://xkskhkroosddxmyufxsw.supabase.co
+      - key: VALD_SUPABASE_SERVICE_ROLE_KEY
+        sync: false
 
   - type: web
     name: acrophase-frontend

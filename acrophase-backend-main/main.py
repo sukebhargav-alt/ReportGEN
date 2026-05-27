@@ -12,6 +12,7 @@ from modules.cpet.router import router as cpet_router
 from modules.profiling.router import router as profiling_router
 from modules.auth.router import router as auth_router
 from modules.athletes.router import router as athletes_router
+from modules.vald.router import router as vald_router
 
 # ===============================
 # INIT
@@ -44,6 +45,7 @@ app.include_router(cpet_router, tags=["CPET"])
 app.include_router(profiling_router, tags=["Profiling"])
 app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
 app.include_router(athletes_router, prefix="/athletes", tags=["Athletes"])
+app.include_router(vald_router, tags=["VALD"])
 
 @app.get("/")
 async def root():
