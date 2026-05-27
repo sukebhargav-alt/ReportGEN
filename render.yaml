@@ -35,7 +35,7 @@ services:
       - key: VALD_REGION
         value: aue
       - key: VALD_SUPABASE_URL
-        value: https://xkskhkroosddxmyufxsw.supabase.co
+        value: https://jcjqskabyzuvcbsxlhhv.supabase.co
       - key: VALD_SUPABASE_SERVICE_ROLE_KEY
         sync: false
 
