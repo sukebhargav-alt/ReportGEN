@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import base64
 import os
 from copy import deepcopy
 from typing import Any
@@ -31,6 +32,9 @@ def _render_pdf(buffer, data: dict[str, Any]) -> None:
 
     base_dir = os.path.dirname(os.path.abspath(__file__))
     templates_dir = os.path.join(base_dir, "templates")
+    static_dir = os.path.join(base_dir, "..", "..", "static")
+    with open(os.path.join(static_dir, "logo.png"), "rb") as logo_file:
+        logo_base64 = base64.b64encode(logo_file.read()).decode("utf-8")
 
     env = Environment(
         loader=FileSystemLoader(templates_dir),
@@ -46,12 +50,22 @@ def _render_pdf(buffer, data: dict[str, Any]) -> None:
             page.pdf(
                 format="A4",
                 print_background=True,
-                margin={"top": "48px", "bottom": "45px", "left": "48px", "right": "48px"},
+                margin={"top": "125px", "bottom": "70px", "left": "65px", "right": "65px"},
                 display_header_footer=True,
-                header_template="<div></div>",
+                header_template=f"""
+                <div style="width:100%; padding:24px 65px 16px 65px; font-family:-apple-system,BlinkMacSystemFont,Inter,sans-serif; border-bottom:2px solid #ff8c00; display:flex; justify-content:space-between; align-items:flex-end;">
+                  <div style="display:flex; align-items:center;">
+                    <img src="data:image/png;base64,{logo_base64}" style="height:32px; margin-right:16px;" />
+                    <span style="font-weight:800; color:#ff8c00; font-size:18px; letter-spacing:1.6px;">ACROPHASE</span>
+                  </div>
+                  <div style="text-align:right;">
+                    <div style="font-weight:700; font-size:20px; letter-spacing:0.3px; color:#111;">{athlete_name}</div>
+                    <div style="font-size:13px; font-weight:600; color:#555; margin-top:4px;">{payload.get("sport") or ""} · {payload.get("assessment_date") or ""}</div>
+                  </div>
+                </div>""",
                 footer_template="""
-                <div style="width:100%;padding:0 48px;color:#94a3b8;font:8px Arial,sans-serif;display:flex;justify-content:space-between;">
-                  <span>AcroReports | Clinical Performance Assessment</span>
+                <div style="width:100%; padding:0 65px; font-size:8px; font-family:Inter,sans-serif; color:#a0a0a0; display:flex; justify-content:space-between;">
+                  <span>High Performance VALD Assessment</span>
                   <span>Page <span class="pageNumber"></span> / <span class="totalPages"></span></span>
                 </div>
                 """,

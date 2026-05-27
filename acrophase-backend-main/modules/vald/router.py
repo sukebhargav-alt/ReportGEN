@@ -199,7 +199,7 @@ Joint/region: {joint_name}
 Measured data:
 {chr(10).join(metric_lines)}
 
-Write a detailed joint-specific interpretation of 220-320 words relevant to the physical demands of {sport}, with these Markdown headings:
+Write a concise joint-specific interpretation of no more than 105 words relevant to the physical demands of {sport}. Use one sentence under each of these Markdown headings:
 **Measurement Summary**
 **Sport-Specific Meaning**
 **Comparison Context**
@@ -222,9 +222,14 @@ No numerical VALD Norms percentile was supplied by the API, so explicitly state 
             ],
             temperature=0.2,
         )
-        interpretations[joint_name] = constrain_interpretation_language(
+        interpretation = constrain_interpretation_language(
             response.choices[0].message.content or ""
         )
+        if len(interpretation.split()) > 125:
+            interpretation = compact_interpretation(
+                interpretation, joint_name, sport
+            )
+        interpretations[joint_name] = interpretation
 
     return {"interpretations": interpretations}
 
@@ -462,6 +467,43 @@ def format_metric_for_prompt(test_type: str, metric: dict) -> str:
     ).strip()
 
 
+def compact_interpretation(text: str, joint_name: str, sport: str) -> str:
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {
+                "role": "system",
+                "content": (
+                    "You shorten technical sports reports without adding claims. "
+                    "Follow the requested word limit exactly."
+                ),
+            },
+            {
+                "role": "user",
+                "content": f"""
+Condense this {joint_name} interpretation for a one-page {sport} report.
+Use exactly these four Markdown headings and one brief sentence beneath each:
+**Measurement Summary**
+**Sport-Specific Meaning**
+**Comparison Context**
+**Practical Priorities**
+
+Maximum 105 words total. Retain the most relevant bilateral/asymmetry observation.
+State that numerical VALD Norms or approved benchmarks are needed for absolute interpretation.
+Do not diagnose injury or introduce a new benchmark.
+
+Original interpretation:
+{text}
+""",
+            },
+        ],
+        temperature=0.1,
+    )
+    return constrain_interpretation_language(
+        response.choices[0].message.content or text
+    )
+
+
 def joint_from_test_type(test_type: str) -> str:
     name = re.sub(r"^(ROM|Strength):\s*", "", test_type, flags=re.IGNORECASE)
     normalized = name.lower()
@@ -492,6 +534,7 @@ def constrain_interpretation_language(content: str) -> str:
         (r"\bdeficien(?:t|cy)\b", "difference"),
         (r"\bdeficit\b", "difference"),
         (r"\bdeficits\b", "differences"),
+        (r"\bacceptable limits\b", "the operational screening band"),
         (
             r"\b(?:elevated |increased |potential )?risk of (?:an? )?(?:overuse )?injur(?:y|ies)\b",
             "consideration for qualified practitioner review",
