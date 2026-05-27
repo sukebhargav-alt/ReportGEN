@@ -6,6 +6,9 @@ import TestSystemCard from "../components/TestSystemCard";
 import {
   FileText,
   Activity,
+  Dumbbell,
+  Footprints,
+  Scale,
 } from "lucide-react";
 
 export default function Reports() {
@@ -23,6 +26,24 @@ export default function Reports() {
       title: "CPET Report",
       description: "Get Started",
       icon: <Activity className="h-6 w-6 text-orange-600" />,
+    },
+    {
+      id: "dynamometer",
+      title: "Dynamometer Report",
+      description: "Get Started",
+      icon: <Dumbbell className="h-6 w-6 text-orange-600" />,
+    },
+    {
+      id: "forcedecks",
+      title: "ForceDecks Report",
+      description: "Get Started",
+      icon: <Footprints className="h-6 w-6 text-orange-600" />,
+    },
+    {
+      id: "bca",
+      title: "BCA",
+      description: "Get Started",
+      icon: <Scale className="h-6 w-6 text-orange-600" />,
     },
   ];
 

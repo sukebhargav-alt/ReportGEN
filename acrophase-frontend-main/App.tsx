@@ -10,6 +10,8 @@ import Search from "./src/pages/Search";
 import Reports from "./src/pages/Reports";
 import ProfilingReport from "./src/pages/ProfilingReport";
 import CPETReport from "./src/pages/CPETReport";
+import BCAReport from "./src/pages/BCAReport";
+import NameInputReport from "./src/pages/NameInputReport";
 import NotFound from "./src/pages/NotFound";
 
 const App: React.FC = () => {
@@ -23,6 +25,15 @@ const App: React.FC = () => {
             <Route path="/reports" element={<Reports />} />
             <Route path="/reports/cpet" element={<CPETReport />} />
             <Route path="/reports/profiling" element={<ProfilingReport />} />
+            <Route path="/reports/bca" element={<BCAReport />} />
+            <Route
+              path="/reports/dynamometer"
+              element={<NameInputReport title="Dynamometer Report" />}
+            />
+            <Route
+              path="/reports/forcedecks"
+              element={<NameInputReport title="ForceDecks Report" />}
+            />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <ToastContainer
