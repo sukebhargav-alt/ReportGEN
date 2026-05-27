@@ -109,7 +109,10 @@ class ValdSyncService:
             if not tests:
                 break
 
-            test_rows = [self.dynamo_test_row(test) for test in tests if self.dynamo_test_row(test)]
+            test_rows = unique_rows(
+                [row for test in tests if (row := self.dynamo_test_row(test))],
+                "vald_test_id",
+            )
             await self.repo.upsert("vald_tests", test_rows, on_conflict="vald_test_id")
             tests_upserted += len(test_rows)
 
@@ -169,7 +172,10 @@ class ValdSyncService:
             if not tests:
                 break
 
-            test_rows = [self.forcedecks_test_row(test) for test in tests if self.forcedecks_test_row(test)]
+            test_rows = unique_rows(
+                [row for test in tests if (row := self.forcedecks_test_row(test))],
+                "vald_test_id",
+            )
             await self.repo.upsert("vald_tests", test_rows, on_conflict="vald_test_id")
             tests_upserted += len(test_rows)
             candidate_tests.extend(tests)
@@ -440,3 +446,15 @@ def needs_healing(test_type: Any, metrics: list[dict[str, Any]]) -> bool:
         if not side_counts or len(side_counts) == 1:
             return True
     return False
+
+
+def unique_rows(rows: list[dict[str, Any]], key: str) -> list[dict[str, Any]]:
+    seen = set()
+    unique = []
+    for row in rows:
+        value = row.get(key)
+        if not value or value in seen:
+            continue
+        seen.add(value)
+        unique.append(row)
+    return unique
