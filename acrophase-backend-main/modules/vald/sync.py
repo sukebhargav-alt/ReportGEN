@@ -150,6 +150,22 @@ class ValdSyncService:
             "errors": errors,
         }
 
+    async def repair_empty_dynamo_metrics(
+        self, tenant_id: str, tests: list[dict[str, Any]], metrics_by_test: dict[str, list[dict[str, Any]]]
+    ) -> int:
+        repaired = 0
+        for test in tests:
+            test_id = test.get("vald_test_id")
+            if test.get("device") != "dynamo" or not test_id or metrics_by_test.get(test_id):
+                continue
+            detail = await self.api.dynamo_detail(tenant_id, test_id)
+            metrics = self.extract_dynamo_metrics(test, detail or {})
+            if metrics:
+                await self.repo.delete_metrics_for_tests([test_id])
+                await self.repo.insert_metrics(metrics)
+                repaired += 1
+        return repaired
+
     async def sync_forcedecks(self, tenant_id: str) -> dict[str, Any]:
         today = datetime.now(UTC).date()
         date_to = today - timedelta(days=1)
@@ -259,29 +275,37 @@ class ValdSyncService:
         test_id = pick(detail, "testId", "id") or pick(list_test, "testId", "id")
         movement = split_words(pick(detail, "movement") or pick(list_test, "movement") or "")
         side = normalize_side(pick(detail, "laterality") or pick(list_test, "laterality"))
+        is_range_of_motion = str(pick(detail, "testCategory") or "").lower().replace(" ", "") == "rangeofmotion"
         metrics = []
 
-        reps = detail.get("reps") or detail.get("Reps") or []
-        if isinstance(reps, list):
-            for idx, rep in enumerate(reps, start=1):
-                for key, value in rep.items():
+        summaries = detail.get("repetitionTypeSummaries") or []
+        repetitions = detail.get("repetitions") or detail.get("reps") or detail.get("Reps") or []
+        results = summaries if isinstance(summaries, list) and summaries else repetitions
+        if isinstance(results, list):
+            for idx, result in enumerate(results, start=1):
+                result_side = normalize_side(pick(result, "laterality")) or side
+                result_movement = split_words(pick(result, "movement") or movement)
+                is_rep = results is repetitions
+                for key, value in result.items():
                     if should_skip_dynamo_key(key) or not is_number(value):
                         continue
-                    metric_name = f"{movement + ' ' if movement else ''}{split_words(key)}"
-                    if side:
-                        metric_name += f" ({side})"
-                    metric_name += f" [Rep {pick(rep, 'repNo', 'repNumber') or idx}]"
-                    metrics.append(metric_row(test_id, metric_name, value, pick(rep, "unit", "units")))
+                    label, unit = dynamo_metric_label_and_unit(key)
+                    if is_range_of_motion and "range of motion" not in label.lower():
+                        continue
+                    metric_name = f"{result_movement + ' ' if result_movement else ''}{label}"
+                    if result_side:
+                        metric_name += f" ({result_side})"
+                    if is_rep:
+                        metric_name += f" [Rep {pick(result, 'repNo', 'repNumber') or idx}]"
+                    metrics.append(metric_row(test_id, metric_name, value, unit))
 
-        for key, value in detail.items():
-            if key in {"page", "totalPages", "durationSeconds"}:
+        for asymmetry in detail.get("asymmetries") or []:
+            value = pick(asymmetry, "valuePercentage", "value")
+            if not is_number(value):
                 continue
-            if should_skip_dynamo_key(key) or not is_number(value):
-                continue
-            metric_name = split_words(key)
-            if side:
-                metric_name += f" ({side})"
-            metrics.append(metric_row(test_id, metric_name, value, None))
+            asymmetry_movement = split_words(pick(asymmetry, "movement") or movement)
+            metric_name = f"{asymmetry_movement + ' ' if asymmetry_movement else ''}Asymmetry"
+            metrics.append(metric_row(test_id, metric_name, value, "%"))
 
         return metrics
 
@@ -383,9 +407,9 @@ def normalize_side(value: Any) -> str | None:
     if value is None:
         return None
     text = str(value).strip().lower()
-    if text in {"right", "r", "rt"}:
+    if text in {"right", "r", "rt"} or text.startswith("right"):
         return "Right"
-    if text in {"left", "l", "lt"}:
+    if text in {"left", "l", "lt"} or text.startswith("left"):
         return "Left"
     return None
 
@@ -409,7 +433,32 @@ def dynamo_test_type(test: dict[str, Any]) -> str:
 
 def should_skip_dynamo_key(key: str) -> bool:
     lower = key.lower()
-    return "id" in lower or lower in {"repno", "repnumber"}
+    return "id" in lower or lower in {
+        "repno",
+        "repnumber",
+        "repcount",
+        "movement",
+        "laterality",
+        "startoffsetseconds",
+        "durationseconds",
+    }
+
+
+def dynamo_metric_label_and_unit(key: str) -> tuple[str, str | None]:
+    unit_suffixes = (
+        ("NewtonsPerSecond", "N/s"),
+        ("NewtonSeconds", "N*s"),
+        ("Percentage", "%"),
+        ("Degrees", "deg"),
+        ("Newtons", "N"),
+        ("Seconds", "s"),
+    )
+    for suffix, unit in unit_suffixes:
+        if key.lower().endswith(suffix.lower()):
+            label = split_words(key[: -len(suffix)])
+            return label[:1].upper() + label[1:], unit
+    label = split_words(key)
+    return label[:1].upper() + label[1:], None
 
 
 def is_number(value: Any) -> bool:

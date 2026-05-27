@@ -45,12 +45,44 @@ Optional filters:
 curl "https://your-backend.onrender.com/athlete-report?name=Jane%20Doe&from=2026-01-01&to=2026-05-01&test_type=CMJ&latest_only=true"
 ```
 
+To fetch only the report surface being displayed:
+
+```bash
+curl "https://your-backend.onrender.com/athlete-report?name=Jane%20Doe&device=dynamometer&latest_only=true"
+```
+
 Response shape:
 
 ```json
 {
-  "athlete": { "vald_id": "...", "name": "Jane Doe" },
-  "dynamometer": { "tests": [] },
-  "forcedecks": { "tests": [] }
+  "athlete": {
+    "vald_id": "...",
+    "name": "Jane Doe",
+    "date_of_birth": "2000-01-01T00:00:00",
+    "age_years": 26,
+    "height_cm": null,
+    "weight_kg": null
+  },
+  "dynamometer": { "tests": [], "joints": [] },
+  "forcedecks": { "tests": [], "joints": [] }
 }
 ```
+
+The External Profiles `GET /profiles` response currently supplies date of birth,
+which is used to calculate age. It does not return Hub-entered height or weight,
+so those fields stay empty unless VALD expands that API response.
+
+Legacy Dynamo records with empty metric lists are self-healed on the first report
+lookup by re-reading their VALD detail response and extracting
+`repetitionTypeSummaries` and asymmetry values.
+
+## Joint interpretations
+
+```bash
+curl -X POST https://your-backend.onrender.com/vald/joint-interpretations \
+  -H "Content-Type: application/json" \
+  -d '{"athlete":{"name":"Jane Doe"},"report_type":"Dynamometer Report","joints":[]}'
+```
+
+Send the joint groups returned from `/athlete-report`. The endpoint returns one
+technical interpretation per joint that contains populated metrics.

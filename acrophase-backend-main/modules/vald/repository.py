@@ -147,6 +147,7 @@ class ValdRepository:
         date_from: str | None = None,
         date_to: str | None = None,
         test_type: str | None = None,
+        device: str | None = None,
     ) -> list[dict[str, Any]]:
         params = {
             "select": "vald_test_id,device,test_type,test_date",
@@ -159,6 +160,8 @@ class ValdRepository:
             params["test_date"] = f"lte.{date_to}"
         if test_type:
             params["test_type"] = f"eq.{test_type}"
+        if device:
+            params["device"] = f"eq.{device}"
 
         return await self.request("GET", "vald_tests", params=params) or []
 

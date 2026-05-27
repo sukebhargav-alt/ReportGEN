@@ -69,9 +69,14 @@ class ValdApiClient:
         payload = await self.request(f"{self.host('externaltenants')}/tenants")
         return normalize_list(payload)
 
-    async def profiles(self, tenant_id: str) -> list[dict[str, Any]]:
+    async def profiles(
+        self, tenant_id: str, profile_ids: list[str] | None = None
+    ) -> list[dict[str, Any]]:
+        query: dict[str, str] = {"tenantId": tenant_id}
+        if profile_ids:
+            query["profileIds"] = ",".join(profile_ids)
         payload = await self.request(
-            f"{self.host('externalprofile')}/profiles?tenantId={tenant_id}"
+            f"{self.host('externalprofile')}/profiles?{urlencode(query)}"
         )
         return normalize_list(payload)
 
