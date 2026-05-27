@@ -148,16 +148,28 @@ class ValdRepository:
         date_to: str | None = None,
         test_type: str | None = None,
         device: str | None = None,
+        assessment_date: str | None = None,
     ) -> list[dict[str, Any]]:
         params = {
             "select": "vald_test_id,device,test_type,test_date",
             "athlete_vald_id": f"eq.{vald_id}",
             "order": "test_date.desc.nullslast",
         }
-        if date_from:
-            params["test_date"] = f"gte.{date_from}"
-        if date_to:
-            params["test_date"] = f"lte.{date_to}"
+        date_filters: list[str] = []
+        if assessment_date:
+            date_filters.extend(
+                [
+                    f"test_date.gte.{assessment_date}T00:00:00Z",
+                    f"test_date.lte.{assessment_date}T23:59:59.999999Z",
+                ]
+            )
+        else:
+            if date_from:
+                date_filters.append(f"test_date.gte.{date_from}")
+            if date_to:
+                date_filters.append(f"test_date.lte.{date_to}")
+        if date_filters:
+            params["and"] = f"({','.join(date_filters)})"
         if test_type:
             params["test_type"] = f"eq.{test_type}"
         if device:

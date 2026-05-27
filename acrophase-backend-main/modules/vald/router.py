@@ -2,17 +2,19 @@ from __future__ import annotations
 
 from collections import OrderedDict
 from datetime import date, datetime
+from io import BytesIO
 import logging
 import re
 from typing import Optional
 
 from fastapi import APIRouter, Body, Query
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 
 from modules.common.config import client
 from modules.common.responses import error_response, success_response
 from modules.vald.client import ValdApiClient
 from modules.vald.repository import ValdRepository
+from modules.vald.renderer import render_vald_joint_pdf
 from modules.vald.sync import ValdSyncService, pick
 
 router = APIRouter()
@@ -39,7 +41,20 @@ async def athlete_report(
     test_type: Optional[str] = None,
     latest_only: bool = False,
     device: Optional[str] = None,
+    assessment_date: Optional[str] = None,
+    sport: Optional[str] = None,
 ):
+    if assessment_date:
+        try:
+            date.fromisoformat(assessment_date)
+        except ValueError:
+            return JSONResponse(
+                status_code=400,
+                content=error_response(
+                    message="Invalid assessment date",
+                    errors=["assessment_date must use YYYY-MM-DD format"],
+                ),
+            )
     repo = ValdRepository()
     matches = await repo.lookup_athletes_by_name(name.strip())
     exact_matches = [
@@ -84,6 +99,7 @@ async def athlete_report(
         date_to=date_to,
         test_type=test_type,
         device=device_key,
+        assessment_date=assessment_date,
     )
     if latest_only:
         tests = most_recent_per_test_type(tests)
@@ -121,18 +137,24 @@ async def athlete_report(
 
     response = {
         "athlete": athlete,
+        "context": {"assessment_date": assessment_date, "sport": sport},
         "dynamometer": {"tests": [], "joints": []},
         "forcedecks": {"tests": [], "joints": []},
     }
 
     for test in tests:
         section = "dynamometer" if test["device"] == "dynamo" else "forcedecks"
+        metrics = metrics_by_test.get(test["vald_test_id"], [])
+        selected_metrics = select_key_metrics(test.get("test_type") or "", metrics)
+        if not selected_metrics:
+            continue
         response[section]["tests"].append(
             {
                 "vald_test_id": test["vald_test_id"],
                 "test_type": test.get("test_type"),
                 "test_date": test.get("test_date"),
-                "metrics": metrics_by_test.get(test["vald_test_id"], []),
+                "metrics": selected_metrics,
+                "available_metric_count": len(metrics),
             }
         )
 
@@ -147,13 +169,15 @@ async def generate_joint_interpretations(data: dict = Body(...)):
     athlete = data.get("athlete") or {}
     joints = data.get("joints") or []
     report_type = data.get("report_type") or "VALD"
+    sport = str(data.get("sport") or "").strip() or "sport not provided"
+    assessment_date = data.get("assessment_date") or "not provided"
     interpretations: dict[str, str] = {}
 
     for joint in joints:
         joint_name = str(joint.get("joint") or "").strip()
         tests = joint.get("tests") or []
         metric_lines = [
-            f"{test.get('test_type', 'Test')}: {metric.get('name')} = {metric.get('value')} {metric.get('unit') or ''}".strip()
+            format_metric_for_prompt(test.get("test_type", "Test"), metric)
             for test in tests
             for metric in (test.get("metrics") or [])
         ][:80]
@@ -168,20 +192,24 @@ Age: {athlete.get("age_years") or "not available"}
 Height: {athlete.get("height_cm") or "not available"} cm
 Weight: {athlete.get("weight_kg") or "not available"} kg
 Report system: {report_type}
+Sport: {sport}
+Assessment date: {assessment_date}
 Joint/region: {joint_name}
 
 Measured data:
 {chr(10).join(metric_lines)}
 
-Write a concise joint-specific interpretation with these Markdown headings:
-**Finding**
-**Performance Implication**
-**Action**
+Write a detailed joint-specific interpretation of 220-320 words relevant to the physical demands of {sport}, with these Markdown headings:
+**Measurement Summary**
+**Sport-Specific Meaning**
+**Comparison Context**
+**Practical Priorities**
 
 Use only the supplied data. Describe observed left-right differences when shown.
 Do not call a value significant, deficient, abnormal, risky, or injury-related without a supplied benchmark.
 Do not diagnose injury or prescribe treatment. Frame actions as options for coach or practitioner review.
-If context or reference ranges are absent, say so briefly.
+Green or red asymmetry screening labels use an operational 10% review threshold, not an age- or sport-specific VALD norm.
+No numerical VALD Norms percentile was supplied by the API, so explicitly state that absolute values need VALD Hub norms or an approved benchmark for age-matched interpretation.
 """
         response = client.chat.completions.create(
             model="gpt-4o-mini",
@@ -199,6 +227,23 @@ If context or reference ranges are absent, say so briefly.
         )
 
     return {"interpretations": interpretations}
+
+
+@router.post("/vald/final-pdf")
+async def generate_vald_final_pdf(data: dict = Body(...)):
+    buffer = BytesIO()
+    await render_vald_joint_pdf(buffer, data)
+    buffer.seek(0)
+    athlete_name = re.sub(
+        r"[^A-Za-z0-9_-]+", "_", str((data.get("athlete") or {}).get("name") or "athlete")
+    ).strip("_")
+    return StreamingResponse(
+        buffer,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f"attachment; filename={athlete_name}_VALD_Joint_Report.pdf"
+        },
+    )
 
 
 def most_recent_per_test_type(tests: list[dict]) -> list[dict]:
@@ -246,6 +291,10 @@ def group_tests_by_joint(tests: list[dict]) -> list[dict]:
             "joint": joint,
             "tests": joint_tests,
             "metric_count": sum(len(test.get("metrics") or []) for test in joint_tests),
+            "available_metric_count": sum(
+                test.get("available_metric_count", len(test.get("metrics") or []))
+                for test in joint_tests
+            ),
             "last_test_date": next(
                 (test.get("test_date") for test in joint_tests if test.get("test_date")),
                 None,
@@ -253,6 +302,164 @@ def group_tests_by_joint(tests: list[dict]) -> list[dict]:
         }
         for joint, joint_tests in grouped.items()
     ]
+
+
+def select_key_metrics(test_type: str, metrics: list[dict], limit: int = 5) -> list[dict]:
+    asymmetry = next(
+        (
+            metric
+            for metric in metrics
+            if "asymmetry" in str(metric.get("name") or "").lower()
+        ),
+        None,
+    )
+    average_only = [
+        metric
+        for metric in metrics
+        if "avg " in str(metric.get("name") or "").lower()
+        and not (
+            test_type.lower().startswith("strength:")
+            and "range of motion" in str(metric.get("name") or "").lower()
+        )
+    ]
+    ranked = sorted(
+        enumerate(average_only),
+        key=lambda item: (-metric_priority(test_type, item[1].get("name") or ""), item[0]),
+    )
+    rows: OrderedDict[tuple[str, str | None], dict] = OrderedDict()
+    for _, metric in ranked:
+        name = str(metric.get("name") or "")
+        side_match = re.search(r"\s*\((Right|Left)\)\s*$", name, flags=re.IGNORECASE)
+        base_name = name[: side_match.start()].strip() if side_match else name
+        key = (display_metric_name(base_name), metric.get("unit"))
+        if key not in rows:
+            rows[key] = {
+                "name": key[0],
+                "value": metric.get("value") if not side_match else None,
+                "unit": metric.get("unit"),
+                "status": "neutral",
+                "status_label": "Measured",
+                "reference_note": "VALD Norms percentile not available through this API response.",
+            }
+        if side_match:
+            side = side_match.group(1).lower()
+            rows[key][f"{side}_value"] = metric.get("value")
+    selected = [
+        row
+        for row in list(rows.values())[:limit]
+        if row.get("right_value") is not None and row.get("left_value") is not None
+    ]
+    for index, metric in enumerate(selected):
+        asymmetry_value = bilateral_asymmetry(metric)
+        if index == 0 and asymmetry is not None:
+            asymmetry_value = abs(float(asymmetry["value"]))
+        screened = add_metric_status({"name": "Asymmetry", "value": asymmetry_value})
+        metric.update(
+            {
+                "asymmetry_value": asymmetry_value,
+                "asymmetry_unit": "%",
+                "direction": asymmetry_direction(metric),
+                "status": screened.get("status"),
+                "status_label": screened.get("status_label"),
+                "reference_note": (
+                    "VALD-reported asymmetry; operational <=10% screening band."
+                    if index == 0 and asymmetry is not None
+                    else "Calculated from displayed bilateral averages; operational <=10% screening band."
+                ),
+            }
+        )
+    return selected
+
+
+def metric_priority(test_type: str, name: str) -> int:
+    label = name.lower()
+    if "asymmetry" in label:
+        return 120
+    if test_type.lower().startswith("strength:"):
+        strength_priorities = (
+            ("avg force", 115),
+            ("avg rate of force development", 110),
+            ("avg impulse", 105),
+            ("avg time to peak force", 100),
+            ("range of motion", 10),
+        )
+        return next((score for term, score in strength_priorities if term in label), 20)
+    priorities = (
+        ("avg range of motion", 110),
+        ("avg force", 100),
+        ("avg rate of force development", 90),
+        ("avg impulse", 80),
+        ("avg time to peak force", 70),
+    )
+    return next((score for term, score in priorities if term in label), 10)
+
+
+def display_metric_name(name: str) -> str:
+    return re.sub(r"\bAvg Range Of Motion\b", "Average ROM", name, flags=re.IGNORECASE).replace(
+        "Avg ", "Average "
+    )
+
+
+def asymmetry_direction(metric: dict) -> str:
+    right = metric.get("right_value")
+    left = metric.get("left_value")
+    if right is None or left is None:
+        return "-"
+    if float(right) == float(left):
+        return "Equal"
+    return "Towards Right" if float(right) > float(left) else "Towards Left"
+
+
+def bilateral_asymmetry(metric: dict) -> float:
+    right = abs(float(metric["right_value"]))
+    left = abs(float(metric["left_value"]))
+    larger = max(right, left)
+    return round(abs(right - left) / larger * 100, 1) if larger else 0.0
+
+
+def add_metric_status(metric: dict) -> dict:
+    result = dict(metric)
+    if "asymmetry" in str(metric.get("name") or "").lower():
+        try:
+            difference = abs(float(metric.get("value")))
+        except (TypeError, ValueError):
+            return result
+        within_band = difference <= 10
+        result.update(
+            {
+                "status": "green" if within_band else "red",
+                "status_label": "Within screening band" if within_band else "Review asymmetry",
+                "reference_note": "Operational asymmetry screening band: <=10%; not a VALD norm.",
+            }
+        )
+    else:
+        result.update(
+            {
+                "status": "neutral",
+                "status_label": "Measured",
+                "reference_note": "VALD Norms percentile not available through this API response.",
+            }
+        )
+    return result
+
+
+def format_metric_for_prompt(test_type: str, metric: dict) -> str:
+    unit = metric.get("unit") or ""
+    status = f" [{metric.get('status_label')}]" if metric.get("status_label") else ""
+    if metric.get("right_value") is not None or metric.get("left_value") is not None:
+        asymmetry = (
+            f"; Asymmetry {metric.get('asymmetry_value')} {metric.get('asymmetry_unit')} "
+            f"{metric.get('direction')}{status}"
+            if metric.get("asymmetry_value") is not None
+            else ""
+        )
+        return (
+            f"{test_type}: {metric.get('name')} = Right {metric.get('right_value')} {unit}; "
+            f"Left {metric.get('left_value')} {unit}{asymmetry}"
+        ).strip()
+    return (
+        f"{test_type}: {metric.get('name')} = {metric.get('value')} {unit}{status}"
+    ).strip()
 
 
 def joint_from_test_type(test_type: str) -> str:

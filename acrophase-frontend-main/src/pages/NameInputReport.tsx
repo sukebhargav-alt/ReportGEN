@@ -3,9 +3,11 @@ import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   CalendarDays,
+  Download,
   Dumbbell,
   Ruler,
   Sparkles,
+  Trophy,
   UserRound,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
@@ -18,8 +20,16 @@ interface NameInputReportProps {
 
 interface Metric {
   name: string;
-  value: number;
+  value?: number | null;
+  right_value?: number | null;
+  left_value?: number | null;
+  asymmetry_value?: number | null;
+  asymmetry_unit?: string | null;
+  direction?: string | null;
   unit?: string | null;
+  status?: "green" | "red" | "neutral";
+  status_label?: string;
+  reference_note?: string;
 }
 
 interface Test {
@@ -27,12 +37,14 @@ interface Test {
   test_type: string;
   test_date?: string | null;
   metrics: Metric[];
+  available_metric_count?: number;
 }
 
 interface Joint {
   joint: string;
   tests: Test[];
   metric_count: number;
+  available_metric_count?: number;
   last_test_date?: string | null;
 }
 
@@ -48,6 +60,7 @@ interface Athlete {
 
 interface ReportData {
   athlete: Athlete;
+  context: { assessment_date?: string | null; sport?: string | null };
   dynamometer: { tests: Test[]; joints: Joint[] };
   forcedecks: { tests: Test[]; joints: Joint[] };
 }
@@ -61,7 +74,8 @@ function formatDate(value?: string | null) {
   }).format(new Date(value));
 }
 
-function formatMetricValue(value: number) {
+function formatMetricValue(value?: number | null) {
+  if (value === null || value === undefined) return "-";
   return Number.isFinite(Number(value))
     ? Number(value).toLocaleString("en-IN", { maximumFractionDigits: 2 })
     : value;
@@ -90,8 +104,11 @@ function ProfileValue({
 export default function NameInputReport({ title }: NameInputReportProps) {
   const navigate = useNavigate();
   const [athleteName, setAthleteName] = React.useState("");
+  const [assessmentDate, setAssessmentDate] = React.useState("");
+  const [sport, setSport] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
   const [isGenerating, setIsGenerating] = React.useState(false);
+  const [isDownloadingPdf, setIsDownloadingPdf] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [reportData, setReportData] = React.useState<ReportData | null>(null);
   const [interpretations, setInterpretations] = React.useState<Record<string, string>>({});
@@ -100,7 +117,7 @@ export default function NameInputReport({ title }: NameInputReportProps) {
     : "dynamometer";
 
   const handleLookup = async () => {
-    if (!athleteName.trim()) return;
+    if (!athleteName.trim() || !assessmentDate || !sport.trim()) return;
 
     setIsLoading(true);
     setError(null);
@@ -112,6 +129,8 @@ export default function NameInputReport({ title }: NameInputReportProps) {
         name: athleteName.trim(),
         device: sectionKey,
         latest_only: "true",
+        assessment_date: assessmentDate,
+        sport: sport.trim(),
       });
       const response = await fetch(`${BACKEND_URL}/athlete-report?${query}`);
       const data = await response.json();
@@ -145,6 +164,8 @@ export default function NameInputReport({ title }: NameInputReportProps) {
           athlete: reportData.athlete,
           joints,
           report_type: title,
+          sport: reportData.context.sport,
+          assessment_date: reportData.context.assessment_date,
         }),
       });
       const data = await response.json();
@@ -156,6 +177,40 @@ export default function NameInputReport({ title }: NameInputReportProps) {
       setError(err.message || "Unable to generate interpretations.");
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const downloadFinalPdf = async () => {
+    if (!reportData || Object.keys(interpretations).length === 0) return;
+    setIsDownloadingPdf(true);
+    setError(null);
+    try {
+      const response = await fetch(`${BACKEND_URL}/vald/final-pdf`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          athlete: reportData.athlete,
+          joints,
+          interpretations,
+          report_type: title,
+          sport: reportData.context.sport,
+          assessment_date: reportData.context.assessment_date,
+        }),
+      });
+      if (!response.ok) {
+        throw new Error("Unable to create the final PDF report.");
+      }
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${reportData.athlete.name.replace(/\s+/g, "_")}_VALD_Joint_Report.pdf`;
+      link.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      setError(err.message || "Unable to create the final PDF report.");
+    } finally {
+      setIsDownloadingPdf(false);
     }
   };
 
@@ -175,38 +230,67 @@ export default function NameInputReport({ title }: NameInputReportProps) {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">{title}</h1>
           <p className="mt-2 text-gray-600">
-            Load synced VALD results by athlete, then review joint-level metrics and interpretations.
+            Select an assessment date and sport to produce a date-specific, sport-aware joint report.
           </p>
         </div>
 
         <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-          <label
-            htmlFor="athlete-name"
-            className="block text-sm font-semibold text-gray-700 mb-2"
-          >
-            Athlete Name
-          </label>
-          <div className="flex flex-col sm:flex-row gap-3">
-            <input
-              id="athlete-name"
-              type="text"
-              value={athleteName}
-              onChange={(event) => setAthleteName(event.target.value)}
-              onKeyDown={(event) => event.key === "Enter" && handleLookup()}
-              placeholder="Enter athlete name"
-              className="flex-1 p-3 border rounded-md focus:ring-2 focus:ring-orange-500"
-            />
+          <div className="grid gap-4 lg:grid-cols-3">
+            <div>
+              <label htmlFor="athlete-name" className="block text-sm font-semibold text-gray-700 mb-2">
+                Athlete Name
+              </label>
+              <input
+                id="athlete-name"
+                type="text"
+                value={athleteName}
+                onChange={(event) => setAthleteName(event.target.value)}
+                placeholder="Enter athlete name"
+                className="w-full p-3 border rounded-md focus:ring-2 focus:ring-orange-500"
+              />
+            </div>
+            <div>
+              <label htmlFor="assessment-date" className="block text-sm font-semibold text-gray-700 mb-2">
+                Date of Assessment
+              </label>
+              <input
+                id="assessment-date"
+                type="date"
+                value={assessmentDate}
+                onChange={(event) => setAssessmentDate(event.target.value)}
+                className="w-full p-3 border rounded-md focus:ring-2 focus:ring-orange-500"
+              />
+            </div>
+            <div>
+              <label htmlFor="sport" className="block text-sm font-semibold text-gray-700 mb-2">
+                Sport
+              </label>
+              <input
+                id="sport"
+                type="text"
+                value={sport}
+                onChange={(event) => setSport(event.target.value)}
+                onKeyDown={(event) => event.key === "Enter" && handleLookup()}
+                placeholder="e.g. Badminton"
+                className="w-full p-3 border rounded-md focus:ring-2 focus:ring-orange-500"
+              />
+            </div>
+          </div>
+          <div className="mt-5 flex items-center gap-4">
             <button
               onClick={handleLookup}
-              disabled={!athleteName.trim() || isLoading}
+              disabled={!athleteName.trim() || !assessmentDate || !sport.trim() || isLoading}
               className={`bg-orange-600 text-white px-7 py-3 rounded-md font-medium transition-opacity ${
-                athleteName.trim() && !isLoading
+                athleteName.trim() && assessmentDate && sport.trim() && !isLoading
                   ? "hover:bg-orange-700"
                   : "opacity-50 cursor-not-allowed"
               }`}
             >
               {isLoading ? "Loading VALD data..." : "Load athlete"}
             </button>
+            <span className="text-sm text-gray-500">
+              Only tests recorded on the selected date will be included.
+            </span>
           </div>
         </div>
 
@@ -228,21 +312,45 @@ export default function NameInputReport({ title }: NameInputReportProps) {
                     VALD ID: {reportData.athlete.vald_id}
                   </p>
                 </div>
-                <button
-                  onClick={generateInterpretations}
-                  disabled={!metricsAvailable || isGenerating}
-                  className={`inline-flex items-center justify-center gap-2 rounded-md px-5 py-3 font-medium text-white ${
-                    metricsAvailable && !isGenerating
-                      ? "bg-gray-900 hover:bg-gray-800"
-                      : "bg-gray-400 cursor-not-allowed"
-                  }`}
-                >
-                  <Sparkles size={17} />
-                  {isGenerating ? "Generating..." : "Generate joint interpretations"}
-                </button>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <button
+                    onClick={generateInterpretations}
+                    disabled={!metricsAvailable || isGenerating}
+                    className={`inline-flex items-center justify-center gap-2 rounded-md px-5 py-3 font-medium text-white ${
+                      metricsAvailable && !isGenerating
+                        ? "bg-gray-900 hover:bg-gray-800"
+                        : "bg-gray-400 cursor-not-allowed"
+                    }`}
+                  >
+                    <Sparkles size={17} />
+                    {isGenerating ? "Generating..." : "Generate joint interpretations"}
+                  </button>
+                  <button
+                    onClick={downloadFinalPdf}
+                    disabled={Object.keys(interpretations).length === 0 || isDownloadingPdf}
+                    className={`inline-flex items-center justify-center gap-2 rounded-md px-5 py-3 font-medium ${
+                      Object.keys(interpretations).length > 0 && !isDownloadingPdf
+                        ? "border border-orange-600 text-orange-700 hover:bg-orange-50"
+                        : "border border-gray-200 text-gray-400 cursor-not-allowed"
+                    }`}
+                  >
+                    <Download size={17} />
+                    {isDownloadingPdf ? "Building PDF..." : "Download final PDF"}
+                  </button>
+                </div>
               </div>
 
-              <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <ProfileValue
+                  icon={<Trophy size={14} />}
+                  label="Sport"
+                  value={reportData.context.sport || "Unavailable"}
+                />
+                <ProfileValue
+                  icon={<CalendarDays size={14} />}
+                  label="Assessment"
+                  value={formatDate(reportData.context.assessment_date)}
+                />
                 <ProfileValue
                   icon={<UserRound size={14} />}
                   label="Age"
@@ -301,7 +409,7 @@ export default function NameInputReport({ title }: NameInputReportProps) {
                       </h3>
                       <p className="mt-1 text-sm text-gray-500">
                         {joint.tests.length} test{joint.tests.length === 1 ? "" : "s"} /{" "}
-                        {joint.metric_count} populated metrics / latest {formatDate(joint.last_test_date)}
+                        {joint.metric_count} bilateral rows displayed / latest {formatDate(joint.last_test_date)}
                       </p>
                     </div>
                   </div>
@@ -327,10 +435,16 @@ export default function NameInputReport({ title }: NameInputReportProps) {
                                     Metric
                                   </th>
                                   <th className="px-4 py-3 text-right text-gray-700 font-semibold">
-                                    Value
+                                    Right
+                                  </th>
+                                  <th className="px-4 py-3 text-right text-gray-700 font-semibold">
+                                    Left
                                   </th>
                                   <th className="px-4 py-3 text-left text-gray-700 font-semibold">
                                     Unit
+                                  </th>
+                                  <th className="px-4 py-3 text-left text-gray-700 font-semibold">
+                                    Asymmetry
                                   </th>
                                 </tr>
                               </thead>
@@ -344,16 +458,41 @@ export default function NameInputReport({ title }: NameInputReportProps) {
                                       {metric.name}
                                     </td>
                                     <td className="px-4 py-3 text-right tabular-nums text-gray-900">
-                                      {formatMetricValue(metric.value)}
+                                      {formatMetricValue(metric.right_value)}
+                                    </td>
+                                    <td className="px-4 py-3 text-right tabular-nums text-gray-900">
+                                      {formatMetricValue(metric.left_value)}
                                     </td>
                                     <td className="px-4 py-3 text-gray-500">
                                       {metric.unit || "-"}
+                                    </td>
+                                    <td className="px-4 py-3">
+                                      {metric.asymmetry_value === null || metric.asymmetry_value === undefined ? (
+                                        <span className="text-gray-400">-</span>
+                                      ) : (
+                                        <span
+                                          title={metric.reference_note}
+                                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
+                                            metric.status === "green"
+                                              ? "bg-green-50 text-green-700"
+                                              : "bg-red-50 text-red-700"
+                                          }`}
+                                        >
+                                          {formatMetricValue(metric.asymmetry_value)}{metric.asymmetry_unit || "%"}
+                                          {metric.direction === "Towards Right" ? "R" : metric.direction === "Towards Left" ? "L" : ""}
+                                        </span>
+                                      )}
                                     </td>
                                   </tr>
                                 ))}
                               </tbody>
                             </table>
                           </div>
+                        )}
+                        {test.available_metric_count && test.available_metric_count > test.metrics.length && (
+                          <p className="mt-2 text-xs text-gray-500">
+                            Showing up to 5 bilateral average-result rows from {test.available_metric_count} source measurements; non-average measurements are excluded.
+                          </p>
                         )}
                       </div>
                     ))}

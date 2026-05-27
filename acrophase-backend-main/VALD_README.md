@@ -48,8 +48,11 @@ curl "https://your-backend.onrender.com/athlete-report?name=Jane%20Doe&from=2026
 To fetch only the report surface being displayed:
 
 ```bash
-curl "https://your-backend.onrender.com/athlete-report?name=Jane%20Doe&device=dynamometer&latest_only=true"
+curl "https://your-backend.onrender.com/athlete-report?name=Jane%20Doe&device=dynamometer&assessment_date=2026-05-01&sport=Badminton&latest_only=true"
 ```
+
+`assessment_date` scopes the result to tests recorded on that UTC calendar day.
+`sport` is retained in report context for sport-specific interpretation and PDF output.
 
 Response shape:
 
@@ -81,8 +84,27 @@ lookup by re-reading their VALD detail response and extracting
 ```bash
 curl -X POST https://your-backend.onrender.com/vald/joint-interpretations \
   -H "Content-Type: application/json" \
-  -d '{"athlete":{"name":"Jane Doe"},"report_type":"Dynamometer Report","joints":[]}'
+  -d '{"athlete":{"name":"Jane Doe"},"sport":"Badminton","assessment_date":"2026-05-01","report_type":"Dynamometer Report","joints":[]}'
 ```
 
 Send the joint groups returned from `/athlete-report`. The endpoint returns one
 technical interpretation per joint that contains populated metrics.
+
+Each test response and exported report displays up to five bilateral rows. Paired
+right and left readings are displayed on the same row, and only average
+measurements are selected (with no maximum or minimum measurement rows). Available
+asymmetry is shown on the matching bilateral row together with the higher side.
+Every displayed bilateral row includes compact asymmetry output such as `12.2%R`;
+unpaired measurements are excluded from the bilateral report.
+Asymmetry percentages are screened with a visible operational `<=10%` band;
+this is marked clearly as a screening aid, not as a VALD Norms result.
+Official VALD Norms are age/sex-matched percentile comparisons in VALD Hub;
+numerical percentile outputs are not supplied by the External API response used
+by this report flow.
+
+## Final PDF
+
+POST the selected athlete, date-scoped `joints`, sport, and generated
+`interpretations` to `/vald/final-pdf`. The returned PDF uses the clinical
+assessment visual system with an athlete overview followed by joint-specific
+interpretation and key-metric pages.
