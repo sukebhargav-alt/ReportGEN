@@ -113,6 +113,7 @@ class ValdSyncService:
                 [row for test in tests if (row := self.dynamo_test_row(test))],
                 "vald_test_id",
             )
+            await self.ensure_athlete_stubs(test_rows)
             await self.repo.upsert("vald_tests", test_rows, on_conflict="vald_test_id")
             tests_upserted += len(test_rows)
 
@@ -176,6 +177,7 @@ class ValdSyncService:
                 [row for test in tests if (row := self.forcedecks_test_row(test))],
                 "vald_test_id",
             )
+            await self.ensure_athlete_stubs(test_rows)
             await self.repo.upsert("vald_tests", test_rows, on_conflict="vald_test_id")
             tests_upserted += len(test_rows)
             candidate_tests.extend(tests)
@@ -236,6 +238,20 @@ class ValdSyncService:
             "test_date": pick(test, "recordedUTC", "recordedUtc", "recordedDateUtc", "testDateUtc"),
             "raw_data": test,
         }
+
+    async def ensure_athlete_stubs(self, test_rows: list[dict[str, Any]]) -> None:
+        athlete_ids = sorted(
+            {
+                row["athlete_vald_id"]
+                for row in test_rows
+                if row.get("athlete_vald_id")
+            }
+        )
+        await self.repo.upsert(
+            "vald_athletes",
+            [{"vald_id": athlete_id} for athlete_id in athlete_ids],
+            on_conflict="vald_id",
+        )
 
     def extract_dynamo_metrics(
         self, list_test: dict[str, Any], detail: dict[str, Any]

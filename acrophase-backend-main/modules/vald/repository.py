@@ -43,7 +43,14 @@ class ValdRepository:
                 json=json,
                 headers=headers,
             )
-            response.raise_for_status()
+            try:
+                response.raise_for_status()
+            except httpx.HTTPStatusError as exc:
+                raise httpx.HTTPStatusError(
+                    f"{exc} - {response.text}",
+                    request=exc.request,
+                    response=exc.response,
+                ) from exc
 
         if not response.content:
             return None
