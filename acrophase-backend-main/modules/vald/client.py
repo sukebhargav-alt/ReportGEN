@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import time
 from typing import Any
+from urllib.parse import urlencode
 
 import httpx
 
@@ -75,9 +76,10 @@ class ValdApiClient:
         return normalize_list(payload)
 
     async def dynamo_tests(self, tenant_id: str, modified_from: str, page: int) -> Any:
+        query = urlencode({"modifiedFromUTC": modified_from, "page": page})
         return await self.request(
             f"{self.host('extdynamo')}/v2022q2/teams/{tenant_id}/tests"
-            f"?modifiedFromUTC={modified_from}&page={page}"
+            f"?{query}"
         )
 
     async def dynamo_detail(self, tenant_id: str, test_id: str) -> Any:

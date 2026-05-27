@@ -148,7 +148,8 @@ class ValdSyncService:
 
     async def sync_forcedecks(self, tenant_id: str) -> dict[str, Any]:
         today = datetime.now(UTC).date()
-        date_from = today - timedelta(days=182)
+        date_to = today - timedelta(days=1)
+        date_from = date_to - timedelta(days=181)
         page = 1
         tests_upserted = 0
         metrics_upserted = 0
@@ -158,7 +159,7 @@ class ValdSyncService:
         while self.has_time():
             try:
                 payload = await self.api.forcedecks_tests(
-                    tenant_id, date_from.isoformat(), today.isoformat(), page
+                    tenant_id, date_from.isoformat(), date_to.isoformat(), page
                 )
             except Exception as exc:
                 errors.append({"page": page, "error": str(exc)})
