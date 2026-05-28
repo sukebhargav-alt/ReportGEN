@@ -174,13 +174,14 @@
         display: block;
       }
       .insight-box {
-        background: #f8fafc;
+        background: linear-gradient(135deg, #fff7ed 0%, #ffffff 58%, #f8fafc 100%);
+        border: 1px solid #fed7aa;
         border-left: 5px solid #ff8c00;
         border-radius: 0 14px 14px 0;
         color: #334155;
-        margin: 0 0 20px;
+        margin: 14px 0 0;
         overflow: hidden;
-        padding: 18px 21px;
+        padding: 15px 18px;
         position: relative;
       }
       .insight-box::after {
@@ -193,10 +194,20 @@
         right: 16px;
         top: 8px;
       }
-      .interpretation { font-size: 12px; line-height: 1.58; position: relative; z-index: 1; }
-      .interpretation p { margin: 5px 0; }
+      .interpretation-title {
+        color: #9a3412;
+        font-size: 10px;
+        font-weight: 900;
+        letter-spacing: .9px;
+        margin-bottom: 7px;
+        position: relative;
+        text-transform: uppercase;
+        z-index: 1;
+      }
+      .interpretation { font-size: 10.8px; line-height: 1.48; position: relative; z-index: 1; }
+      .interpretation p { margin: 4px 0; }
       .interpretation strong { color: #0f172a; }
-      .test-block { margin: 0 0 17px; page-break-inside: avoid; }
+      .test-block { margin: 0 0 12px; page-break-inside: avoid; }
       .group-divider {
         align-items: center;
         color: #0f172a;
@@ -207,50 +218,72 @@
         margin-bottom: 8px;
       }
       .test-date { color: #94a3b8; font-size: 10px; font-weight: 600; }
-      .dashboard { display: grid; gap: 8px; grid-template-columns: repeat(2, 1fr); }
-      .dashboard.dense { gap: 7px; grid-template-columns: repeat(3, 1fr); }
-      .dashboard.ultra { gap: 6px; grid-template-columns: repeat(4, 1fr); }
-      .metric-card {
+      .dashboard {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        display: grid;
+        gap: 7px;
+        grid-template-columns: repeat(2, 1fr);
+        padding: 9px;
+      }
+      .test-panel {
         background: #fff;
         border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        box-shadow: 0 1px 2px rgba(0,0,0,.03);
-        padding: 9px 11px;
+        border-radius: 10px;
+        padding: 7px;
       }
-      .metric-header { align-items: flex-start; display: flex; justify-content: space-between; margin-bottom: 7px; }
-      .metric-name {
-        color: #64748b;
-        font-size: 9px;
-        font-weight: 800;
+      .test-panel-title {
+        align-items: center;
+        color: #0f172a;
+        display: flex;
+        font-size: 7.5px;
+        font-weight: 900;
+        justify-content: space-between;
         letter-spacing: .45px;
-        line-height: 1.3;
-        max-width: 77%;
+        margin-bottom: 5px;
         text-transform: uppercase;
       }
-      .metric-unit { color: #94a3b8; font-size: 9px; font-weight: 700; }
-      .metric-body { align-items: center; display: flex; gap: 14px; }
+      .test-panel-date { color: #94a3b8; font-size: 7px; font-weight: 800; }
+      .metric-grid { display: grid; gap: 5px; grid-template-columns: repeat(2, 1fr); }
+      .dense .metric-grid, .ultra .metric-grid { grid-template-columns: repeat(2, 1fr); }
+      .metric-card {
+        background: #fdfdfd;
+        border: 1px solid #edf2f7;
+        border-radius: 7px;
+        box-shadow: 0 1px 2px rgba(15,23,42,.025);
+        padding: 6px 6px;
+      }
+      .metric-header { align-items: flex-start; display: flex; justify-content: space-between; margin-bottom: 4px; }
+      .metric-name {
+        color: #64748b;
+        font-size: 7px;
+        font-weight: 800;
+        letter-spacing: .28px;
+        line-height: 1.3;
+        max-width: 78%;
+        text-transform: uppercase;
+      }
+      .metric-unit { color: #94a3b8; font-size: 7px; font-weight: 700; }
+      .metric-body { align-items: center; display: flex; gap: 5px; }
       .side-box { align-items: baseline; display: flex; gap: 4px; }
-      .side-label { color: #94a3b8; font-size: 8px; font-weight: 800; }
-      .side-value { color: #0f172a; font-size: 14px; font-weight: 800; }
+      .side-label { color: #94a3b8; font-size: 7px; font-weight: 800; }
+      .side-value { color: #0f172a; font-size: 9.5px; font-weight: 800; }
       .asym-tag {
         border-radius: 5px;
-        font-size: 9px;
+        font-size: 7.5px;
         font-weight: 800;
         margin-left: auto;
-        padding: 3px 7px;
+        padding: 2px 4px;
       }
       .status-green { background: #dcfce7; color: #166534; }
       .status-red { background: #fee2e2; color: #991b1b; }
       .metric-note { color: #94a3b8; font-size: 9px; margin-top: 7px; }
-      .dense .metric-card { padding: 8px 9px; }
-      .dense .metric-body { gap: 7px; }
-      .dense .side-value { font-size: 12px; }
-      .dense .asym-tag { font-size: 8px; padding: 2px 5px; }
-      .ultra .metric-card { padding: 7px 7px; }
-      .ultra .metric-body { gap: 5px; }
-      .ultra .metric-name { font-size: 8px; }
-      .ultra .side-value { font-size: 11px; }
-      .ultra .asym-tag { font-size: 7px; padding: 2px 4px; }
+      .dense .metric-card, .ultra .metric-card { padding: 5px 5px; }
+      .dense .metric-body, .ultra .metric-body { gap: 4px; }
+      .dense .side-value, .ultra .side-value { font-size: 9px; }
+      .dense .metric-name, .ultra .metric-name { font-size: 6.5px; }
+      .dense .asym-tag, .ultra .asym-tag { font-size: 7px; padding: 2px 4px; }
     </style>
   </head>
   <body>
@@ -317,9 +350,6 @@
         <span class="joint-meta">{{ joint.tests|length }} test{% if joint.tests|length != 1 %}s{% endif %} | {{ joint.metric_count }} bilateral rows</span>
       </div>
       <div class="assessment-layout">
-        <div class="insight-box">
-          <div class="interpretation">{{ data.interpretations_html.get(joint.joint, "<p>No technical interpretation provided.</p>") | safe }}</div>
-        </div>
         <div class="test-block">
           <div class="group-divider">
             <span>Performance Dashboard</span>
@@ -327,22 +357,34 @@
           </div>
           <div class="dashboard{% if joint.metric_count > 12 %} ultra{% elif joint.metric_count > 8 %} dense{% endif %}">
             {% for test in joint.tests %}
-            {% for metric in test.metrics %}
-            <div class="metric-card">
-              <div class="metric-header">
-                <span class="metric-name">{{ metric.name }}</span>
-                <span class="metric-unit">{{ metric.unit or "-" }}</span>
+            <div class="test-panel">
+              <div class="test-panel-title">
+                <span>{{ test.test_type }}</span>
+                <span class="test-panel-date">{{ test.test_date[:10] if test.test_date else "" }}</span>
               </div>
-              <div class="metric-body">
-                <span class="side-box"><span class="side-label">R</span><span class="side-value">{{ metric.get("right_value") | metric_value }}</span></span>
-                <span class="side-box"><span class="side-label">L</span><span class="side-value">{{ metric.get("left_value") | metric_value }}</span></span>
-                <span class="asym-tag status-{{ metric.status or 'green' }}">{{ metric.get("asymmetry_value") | metric_value }}{{ metric.get("asymmetry_unit") or "%" }}{% if metric.get("direction") == "Towards Right" %}R{% elif metric.get("direction") == "Towards Left" %}L{% endif %}</span>
+              <div class="metric-grid">
+                {% for metric in test.metrics %}
+                <div class="metric-card">
+                  <div class="metric-header">
+                    <span class="metric-name">{{ metric.name }}</span>
+                    <span class="metric-unit">{{ metric.unit or "-" }}</span>
+                  </div>
+                  <div class="metric-body">
+                    <span class="side-box"><span class="side-label">R</span><span class="side-value">{{ metric.get("right_value") | metric_value }}</span></span>
+                    <span class="side-box"><span class="side-label">L</span><span class="side-value">{{ metric.get("left_value") | metric_value }}</span></span>
+                    <span class="asym-tag status-{{ metric.status or 'green' }}">{{ metric.get("asymmetry_value") | metric_value }}{{ metric.get("asymmetry_unit") or "%" }}{% if metric.get("direction") == "Towards Right" %}R{% elif metric.get("direction") == "Towards Left" %}L{% endif %}</span>
+                  </div>
+                </div>
+                {% endfor %}
               </div>
             </div>
             {% endfor %}
-            {% endfor %}
           </div>
           <div class="metric-note">Showing paired average measures only; non-average or unpaired source measurements are excluded.</div>
+        </div>
+        <div class="insight-box">
+          <div class="interpretation-title">Sports Physiotherapy Interpretation</div>
+          <div class="interpretation">{{ data.interpretations_html.get(joint.joint, "<p>No technical interpretation provided.</p>") | safe }}</div>
         </div>
       </div>
     </section>

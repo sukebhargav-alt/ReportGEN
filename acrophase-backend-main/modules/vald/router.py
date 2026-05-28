@@ -274,7 +274,7 @@ async def generate_joint_interpretations(data: dict = Body(...)):
             continue
 
         prompt = f"""
-You are a sports performance scientist interpreting VALD testing data.
+You are an elite sports physiotherapist interpreting VALD bilateral testing data for a high-performance report.
 
 Athlete: {athlete.get("name", "Athlete")}
 Age: {athlete.get("age_years") or "not available"}
@@ -288,15 +288,19 @@ Joint/region: {joint_name}
 Measured data:
 {chr(10).join(metric_lines)}
 
-Write a concise joint-specific interpretation of no more than 105 words relevant to the physical demands of {sport}. Use one sentence under each of these Markdown headings:
-**Measurement Summary**
-**Sport-Specific Meaning**
-**Comparison Context**
-**Practical Priorities**
+Write a joint-specific assessment in no more than 125 words, with the judgement and tone of a world-class sports physiotherapist.
+Use exactly these Markdown headings with one compact, high-value sentence beneath each:
+**Clinical Read**
+**Sport Relevance**
+**Load Management Priority**
+**Next Review**
 
-Use only the supplied data. Describe observed left-right differences when shown.
+Interpret patterns rather than listing every number. Prioritise the most relevant asymmetry direction, movement capacity, and sport demand for {sport}.
+Use only the supplied data. Describe observed left-right differences when shown, and connect them to movement tasks without overclaiming.
+Do not invent review intervals, treatment plans, exercise priorities, return-to-play advice, or predicted performance effects.
+Avoid phrases like "focus on addressing", "targeted interventions", "may influence performance", or "improve performance".
 Do not call a value significant, deficient, abnormal, risky, or injury-related without a supplied benchmark.
-Do not diagnose injury or prescribe treatment. Frame actions as options for coach or practitioner review.
+Do not diagnose injury or prescribe treatment. Frame actions as options for coach, therapist, or practitioner review.
 Green or red asymmetry screening labels use an operational 10% review threshold, not an age- or sport-specific VALD norm.
 No numerical VALD Norms percentile was supplied by the API, so explicitly state that absolute values need VALD Hub norms or an approved benchmark for age-matched interpretation.
 """
@@ -305,7 +309,10 @@ No numerical VALD Norms percentile was supplied by the API, so explicitly state 
             messages=[
                 {
                     "role": "system",
-                    "content": "You write technically careful, concise athlete performance interpretations.",
+                    "content": (
+                        "You write concise high-performance sports physiotherapy assessments. "
+                        "Be specific, clinically careful, and practical without diagnosing."
+                    ),
                 },
                 {"role": "user", "content": prompt},
             ],
@@ -314,7 +321,7 @@ No numerical VALD Norms percentile was supplied by the API, so explicitly state 
         interpretation = constrain_interpretation_language(
             response.choices[0].message.content or ""
         )
-        if len(interpretation.split()) > 125:
+        if len(interpretation.split()) > 145:
             interpretation = compact_interpretation(
                 interpretation, joint_name, sport
             )
@@ -619,13 +626,13 @@ def compact_interpretation(text: str, joint_name: str, sport: str) -> str:
                 "role": "user",
                 "content": f"""
 Condense this {joint_name} interpretation for a one-page {sport} report.
-Use exactly these four Markdown headings and one brief sentence beneath each:
-**Measurement Summary**
-**Sport-Specific Meaning**
-**Comparison Context**
-**Practical Priorities**
+Use exactly these four Markdown headings and one brief, expert sentence beneath each:
+**Clinical Read**
+**Sport Relevance**
+**Load Management Priority**
+**Next Review**
 
-Maximum 105 words total. Retain the most relevant bilateral/asymmetry observation.
+Maximum 125 words total. Retain the most relevant bilateral/asymmetry observation.
 State that numerical VALD Norms or approved benchmarks are needed for absolute interpretation.
 Do not diagnose injury or introduce a new benchmark.
 
@@ -667,6 +674,7 @@ def constrain_interpretation_language(content: str) -> str:
         (r"\bclinically significant\b", "observed"),
         (r"\binsignificant\b", "observed"),
         (r"\bsignificant\b", "observed"),
+        (r"\bsignificantly\b", "observably"),
         (r"\babnormal\b", "observed"),
         (r"\bdeficien(?:t|cy)\b", "difference"),
         (r"\bdeficit\b", "difference"),
@@ -678,6 +686,57 @@ def constrain_interpretation_language(content: str) -> str:
         ),
         (r"\binjuries\b", "clinical concerns"),
         (r"\binjury\b", "clinical concern"),
+        (r"\bmay impact performance\b", "should be reviewed in context"),
+        (r"\bcould impact performance\b", "should be reviewed in context"),
+        (r"\bcan impact performance\b", "should be reviewed in context"),
+        (r"\bmay impact\b", "should be reviewed alongside"),
+        (r"\bcould impact\b", "should be reviewed alongside"),
+        (r"\bcan impact\b", "should be reviewed alongside"),
+        (r"\bmay affect\b", "should be reviewed alongside"),
+        (r"\bcould affect\b", "should be reviewed alongside"),
+        (r"\bcan affect\b", "should be reviewed alongside"),
+        (r"\bpotential areas\b", "areas"),
+        (r"\bpotential area\b", "area"),
+        (r"\bpotential imbalances\b", "observed asymmetry patterns"),
+        (r"\bpotential imbalance\b", "observed asymmetry pattern"),
+        (r"\baddressing\b", "reviewing"),
+        (r"\benhance\b", "inform"),
+        (r"\bimprove\b", "inform"),
+        (r"\boptim(?:al|ize|ise|izing|ising)\b", "high-quality"),
+        (r"\breturn-to-play\b", "sport participation"),
+        (r"\b\d+\s*-\s*\d+\s*weeks?\b", "a planned retest window"),
+        (r"\bmay influence\b", "should be reviewed alongside"),
+        (r"\bcould influence\b", "should be reviewed alongside"),
+        (r"\bcan influence\b", "should be reviewed alongside"),
+        (r"\btargeted interventions\b", "practitioner-led training decisions"),
+        (r"\binterventions\b", "training decisions"),
+        (r"\bto inform overall stability and performance\b", "as part of practitioner review"),
+        (r"\band agility during play\b", "during play"),
+        (r"\bfocus on reviewing\b", "Prioritise practitioner review of"),
+        (r"\bfocus on\b", "Prioritise review of"),
+        (r"\bis recommended\b", "can be considered by the practitioner"),
+        (r"\bare recommended\b", "can be considered by the practitioner"),
+        (r"\bensure balanced strength development\b", "support balanced practitioner decision-making"),
+        (r"\bbalanced strength development\b", "balanced practitioner decision-making"),
+        (r"\bstroke power\b", "stroke demands"),
+        (r"\bperformance metrics\b", "assessment metrics"),
+        (r"\bperformance strategies\b", "practitioner review strategies"),
+        (r"\bcrucial for performance\b", "relevant to sport demands"),
+        (r"\bshould be reviewed\b", "are appropriate for review"),
+        (r"\bwarrant careful monitoring\b", "are appropriate for practitioner monitoring"),
+        (r"\bwarrant monitoring\b", "are appropriate for practitioner monitoring"),
+        (r"\bwarrant review\b", "are appropriate for practitioner review"),
+        (r"\bprevent compensatory patterns\b", "observe compensatory patterns"),
+        (r"\bprevent\b", "observe"),
+        (r"\bensure balanced loading\b", "support balanced loading decisions"),
+        (r"\bensure balanced strength and function\b", "support balanced practitioner decision-making"),
+        (r"\bensure balanced performance\b", "support balanced practitioner decision-making"),
+        (r"\breduce potential compensatory patterns\b", "observe compensatory patterns"),
+        (r"\breduce compensatory patterns\b", "observe compensatory patterns"),
+        (r"\bFurther assessment should occur\b", "Further assessment can be considered"),
+        (r"\bwith a Prioritise review of\b", "with practitioner review of"),
+        (r"\bPrioritize monitoring\b", "Practitioner monitoring can consider"),
+        (r"\bPrioritise monitoring\b", "Practitioner monitoring can consider"),
     )
     safe_content = content
     for pattern, replacement in replacements:
