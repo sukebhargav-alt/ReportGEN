@@ -310,24 +310,25 @@ Joint/region: {joint_name}
 Measured data:
 {chr(10).join(metric_lines)}
 
-Write a joint-specific assessment in 170-220 words, with the judgement and tone of a world-class sports physiotherapist.
+Write a joint-specific assessment in 185-240 words, with the judgement and tone of a world-class sports physiotherapist working with elite athletes.
 Use exactly these Markdown headings:
 **What Looks Good**
 **Main Asymmetry**
 **Why It Matters For {sport}**
 **Performance Focus**
 
+Make the writing practical and coach-facing: first say which movements are currently usable or well balanced, then identify the movement that most deserves attention.
 Mention which movements look good or acceptable from a symmetry/balance perspective when their asymmetry is within the operational 10% band.
 For scalar metrics without right-left asymmetry labels, describe them as reported outputs rather than good, poor, high, or low unless a benchmark is supplied.
-Mention the highest-asymmetry movement(s), the direction, and why those joint actions matter in {sport}.
+Mention the highest-asymmetry movement(s), the direction, and why those joint actions matter in {sport}. Explain the likely performance expression: acceleration, braking, landing, cutting, rotation, reaching, striking, repeat-effort quality, or load sharing, as appropriate to the joint and sport.
 It is acceptable to say that improving the flagged movement quality and right-left balance can help improve sport performance, provided you avoid injury diagnosis.
-Use only the supplied data. Describe observed left-right differences when shown, and connect them to sport-specific movement tasks.
+Use only the supplied data. Describe observed left-right differences when shown, and connect them to sport-specific movement tasks in plain language.
 If you mention a percentage or value, keep it attached to the exact metric name provided in the measured data. Do not move a value from RFD, impulse, force, ROM, stiffness, RSI, or jump height onto another metric.
 Do not invent review intervals, return-to-play advice, or exact exercise prescriptions.
 Do not call a value significant, deficient, abnormal, risky, or injury-related without a supplied benchmark.
 Do not diagnose injury. Frame actions as performance-focused options for coach, therapist, or practitioner review.
 Green or red asymmetry screening labels use an operational 10% review threshold, not an age- or sport-specific VALD norm.
-Briefly state that absolute strength/ROM quality still needs VALD Hub norms or an approved team benchmark for age-matched interpretation.
+Briefly state that absolute strength/ROM quality still needs VALD Hub norms or an approved team benchmark for age-matched interpretation, but do not let that caveat dominate the report.
 """
         response = client.chat.completions.create(
             model="gpt-4o-mini",
@@ -964,19 +965,19 @@ Region: {joint_name}
 Measured ForceDecks data:
 {chr(10).join(metric_lines)}
 
-Write a polished ForceDecks assessment in 190-240 words using exactly these Markdown headings:
+Write a polished ForceDecks assessment in 205-260 words using exactly these Markdown headings:
 **Overall Performance Snapshot**
 **Key Performance Highlights**
 **Test-by-Test Breakdown**
 **Performance Focus**
 
 Follow this content format:
-- Overall Performance Snapshot: summarise jump power, force production, stiffness/RFD, and asymmetry status from the available tests.
-- Key Performance Highlights: mention 2-3 strengths or balanced metrics, then the main concern(s).
+- Overall Performance Snapshot: summarise jump power, force production, stiffness/RFD, landing or balance control, and asymmetry status from the available tests.
+- Key Performance Highlights: mention 2-3 strengths or balanced metrics, then the main concern(s) in priority order.
 - Test-by-Test Breakdown: describe each available test briefly, using exact metric names and values only when supplied.
-- Performance Focus: explain how improving the flagged physical quality can support {sport} performance.
+- Performance Focus: explain how improving the flagged physical quality can support {sport} performance, including likely transfer to acceleration, jumping, landing, deceleration, re-acceleration, or repeated effort.
 
-Use the report style of a world-class sports physiotherapist, but do not diagnose injury or give return-to-sport clearance.
+Use the report style of a world-class sports physiotherapist in an elite performance lab: direct, specific, readable, and useful for athlete and coach. Do not diagnose injury or give return-to-sport clearance.
 For scalar metrics such as Jump Height or RSI, describe them as reported outputs unless a benchmark is supplied.
 For bilateral metrics, describe whether symmetry is good when asymmetry is within the operational 10% band.
 If you mention a percentage or value, keep it attached to the exact metric name provided in the measured data.

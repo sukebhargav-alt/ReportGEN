@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import base64
 import os
 import re
 from copy import deepcopy
@@ -19,6 +18,19 @@ def format_metric_value(value: Any) -> str:
     except (TypeError, ValueError):
         return str(value or "-")
     return f"{number:,.2f}".rstrip("0").rstrip(".")
+
+
+def format_report_date(value: Any) -> str:
+    if not value:
+        return "-"
+    text = str(value)[:10]
+    try:
+        from datetime import date
+
+        parsed = date.fromisoformat(text)
+    except (TypeError, ValueError):
+        return text
+    return parsed.strftime("%d %b %Y").upper()
 
 
 def _render_pdf(buffer, data: dict[str, Any]) -> None:
@@ -64,15 +76,12 @@ def _render_pdf(buffer, data: dict[str, Any]) -> None:
 
     base_dir = os.path.dirname(os.path.abspath(__file__))
     templates_dir = os.path.join(base_dir, "templates")
-    static_dir = os.path.join(base_dir, "..", "..", "static")
-    with open(os.path.join(static_dir, "logo.png"), "rb") as logo_file:
-        logo_base64 = base64.b64encode(logo_file.read()).decode("utf-8")
-
     env = Environment(
         loader=FileSystemLoader(templates_dir),
         autoescape=select_autoescape(["html", "xml"]),
     )
     env.filters["metric_value"] = format_metric_value
+    env.filters["report_date"] = format_report_date
     html = env.get_template("joint_report.html").render(data=payload)
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch()
@@ -82,25 +91,8 @@ def _render_pdf(buffer, data: dict[str, Any]) -> None:
             page.pdf(
                 format="A4",
                 print_background=True,
-                margin={"top": "92px", "bottom": "58px", "left": "58px", "right": "58px"},
-                display_header_footer=True,
-                header_template=f"""
-                <div style="width:100%; padding:22px 58px 12px 58px; font-family:-apple-system,BlinkMacSystemFont,Inter,sans-serif; border-bottom:1px solid #eadfd2; display:flex; justify-content:space-between; align-items:flex-end; background:#fbfaf7;">
-                  <div style="display:flex; align-items:center;">
-                    <img src="data:image/png;base64,{logo_base64}" style="height:28px; margin-right:13px;" />
-                    <span style="font-weight:900; color:#b9520e; font-size:13px; letter-spacing:2px;">ACROPHASE</span>
-                  </div>
-                  <div style="text-align:right;">
-                    <div style="font-weight:800; font-size:13px; letter-spacing:0.2px; color:#202124;">{athlete_name}</div>
-                    <div style="font-size:9px; font-weight:700; color:#706f6b; margin-top:3px; letter-spacing:.9px; text-transform:uppercase;">{payload.get("sport") or ""} | {payload.get("assessment_date") or ""}</div>
-                  </div>
-                </div>""",
-                footer_template="""
-                <div style="width:100%; padding:0 58px; font-size:8px; font-family:Inter,sans-serif; color:#a49b90; display:flex; justify-content:space-between;">
-                  <span>Confidential High Performance VALD Assessment</span>
-                  <span>Page <span class="pageNumber"></span> / <span class="totalPages"></span></span>
-                </div>
-                """,
+                margin={"top": "24px", "bottom": "24px", "left": "24px", "right": "24px"},
+                display_header_footer=False,
             )
         )
         browser.close()
@@ -163,6 +155,7 @@ def enrich_visual_summary(payload: dict[str, Any]) -> None:
         }
         for metric in joint_metrics:
             enrich_metric_visual(metric)
+        joint["display_groups"] = build_display_groups(joint, payload.get("report_type") or "")
 
 
 def enrich_metric_visual(metric: dict[str, Any]) -> None:
@@ -171,6 +164,9 @@ def enrich_metric_visual(metric: dict[str, Any]) -> None:
         "severity_class": severity_class(asymmetry),
         "severity_label": severity_label(asymmetry),
         "asymmetry_width": min(100, round(asymmetry * 3)),
+        "card_range_min": metric_range_min(metric),
+        "card_range_mid": metric_range_mid(metric),
+        "card_range_max": metric_range_max(metric),
     }
     right = metric.get("right_value")
     left = metric.get("left_value")
@@ -190,6 +186,94 @@ def enrich_metric_visual(metric: dict[str, Any]) -> None:
             "left_pct": round(left_value / total * 100, 1),
         }
     )
+
+
+def metric_range_min(metric: dict[str, Any]) -> str:
+    values = metric_numeric_values(metric)
+    if not values:
+        return "-"
+    return format_metric_value(min(values) * 0.82)
+
+
+def metric_range_mid(metric: dict[str, Any]) -> str:
+    values = metric_numeric_values(metric)
+    if not values:
+        return "-"
+    return format_metric_value(sum(values) / len(values))
+
+
+def metric_range_max(metric: dict[str, Any]) -> str:
+    values = metric_numeric_values(metric)
+    if not values:
+        return "-"
+    return format_metric_value(max(values) * 1.18)
+
+
+def metric_numeric_values(metric: dict[str, Any]) -> list[float]:
+    values = []
+    for key in ("right_value", "left_value", "value"):
+        try:
+            if metric.get(key) is not None:
+                values.append(abs(float(metric.get(key))))
+        except (TypeError, ValueError):
+            continue
+    return values
+
+
+def build_display_groups(joint: dict[str, Any], report_type: str) -> list[dict[str, Any]]:
+    metrics = [
+        {**metric, "_test_type": test.get("test_type")}
+        for test in joint.get("tests") or []
+        for metric in test.get("metrics") or []
+    ]
+    if not metrics:
+        return []
+
+    if "force" in report_type.lower():
+        specs = [
+            ("Jump & Reactive", ("jump", "rsi", "contact", "takeoff")),
+            ("Force Production", ("force", "rfd", "stiffness", "impulse")),
+            ("Balance & Control", ("cop", "velocity", "excursion", "ellipse", "balance")),
+        ]
+    else:
+        specs = [
+            ("ROM", ("rom", "°", "deg")),
+            ("Strength", ("force", "rate of force", "impulse", "rfd")),
+        ]
+
+    used: set[int] = set()
+    groups: list[dict[str, Any]] = []
+    for label, patterns in specs:
+        selected = [
+            metric
+            for metric in metrics
+            if any(
+                pattern in f"{metric.get('name', '')} {metric.get('_test_type', '')}".lower()
+                for pattern in patterns
+            )
+        ]
+        selected = select_readable_metrics(selected, limit=3)
+        if selected:
+            for metric in selected:
+                used.add(id(metric))
+            groups.append({"name": label, "metrics": selected})
+
+    remaining = [metric for metric in metrics if id(metric) not in used]
+    if remaining and len(groups) < 2:
+        groups.append({"name": "Key Metrics", "metrics": select_readable_metrics(remaining, limit=3)})
+    return groups[:3]
+
+
+def select_readable_metrics(metrics: list[dict[str, Any]], limit: int = 4) -> list[dict[str, Any]]:
+    ranked = sorted(
+        metrics,
+        key=lambda metric: (
+            metric.get("status") != "red",
+            -float(metric.get("asymmetry_value") or 0),
+            str(metric.get("name") or ""),
+        ),
+    )
+    return ranked[:limit]
 
 
 def severity_label(value: float) -> str:
