@@ -970,13 +970,13 @@ Measured ForceDecks data:
 Write a polished ForceDecks assessment in 235-300 words using exactly these Markdown headings:
 **Overall Performance Snapshot**
 **Key Performance Highlights**
-**Test-by-Test Breakdown**
+**How This Affects {sport}**
 **Performance Focus**
 
 Follow this content format:
 - Overall Performance Snapshot: summarise jump power, force production, stiffness/RFD, landing or balance control, and asymmetry status from the available tests.
 - Key Performance Highlights: mention 2-3 strengths or balanced metrics, then the main concern(s) in priority order.
-- Test-by-Test Breakdown: describe each available test briefly, using exact metric names and values only when supplied.
+- How This Affects {sport}: explain how the force production, asymmetry, stiffness/RFD, landing or balance findings may show up in {sport} performance. Connect the findings to sport actions such as acceleration, jumping, landing, deceleration, re-acceleration, balance recovery, repeated effort, or change of direction.
 - Performance Focus: explain how improving the flagged physical quality can support {sport} performance, including likely transfer to acceleration, jumping, landing, deceleration, re-acceleration, or repeated effort.
 
 Use the report style of a world-class sports physiotherapist in an elite performance lab: direct, specific, readable, and useful for athlete and coach. Make it feel like a practitioner is translating force-plate findings into performance decisions, not simply listing metrics. Do not diagnose injury or give return-to-sport clearance.
@@ -1098,13 +1098,13 @@ def compact_interpretation(
     text: str, joint_name: str, sport: str, report_type: str = ""
 ) -> str:
     if "force" in report_type.lower():
-        headings = """**Overall Performance Snapshot**
+        headings = f"""**Overall Performance Snapshot**
 **Key Performance Highlights**
-**Test-by-Test Breakdown**
+**How This Affects {sport}**
 **Performance Focus**"""
         instruction = (
             "Retain the ForceDecks report format, one useful performance strength, "
-            "the main asymmetry, test-by-test context, and how the focus can support sport performance."
+            "the main asymmetry, sport-specific performance impact, and how the focus can support sport performance."
         )
         maximum = "275"
     else:
