@@ -75,6 +75,8 @@ async def athlete_report(
     device: Optional[str] = None,
     assessment_date: Optional[str] = None,
     sport: Optional[str] = None,
+    height_cm: Optional[float] = None,
+    weight_kg: Optional[float] = None,
     refresh: bool = False,
 ):
     if assessment_date:
@@ -186,6 +188,14 @@ async def athlete_report(
         athlete = await enrich_athlete_from_vald_cached(athlete)
     except Exception as exc:
         logger.warning("VALD demographic enrichment failed for %s: %s", athlete["vald_id"], exc)
+    if height_cm is not None:
+        athlete["height_cm"] = height_cm
+    if weight_kg is not None:
+        athlete["weight_kg"] = weight_kg
+    if height_cm is not None or weight_kg is not None:
+        athlete["demographics_note"] = (
+            "Height and weight were entered manually for this report and are shown in the exported document."
+        )
 
     response = {
         "athlete": athlete,
@@ -275,7 +285,17 @@ async def generate_joint_interpretations(data: dict = Body(...)):
         if not joint_name or not metric_lines:
             continue
 
-        prompt = f"""
+        if "force" in report_type.lower():
+            prompt = forcedecks_interpretation_prompt(
+                athlete=athlete,
+                report_type=report_type,
+                sport=sport,
+                assessment_date=assessment_date,
+                joint_name=joint_name,
+                metric_lines=metric_lines,
+            )
+        else:
+            prompt = f"""
 You are an elite sports physiotherapist interpreting VALD bilateral testing data for a high-performance report.
 
 Athlete: {athlete.get("name", "Athlete")}
@@ -326,9 +346,10 @@ Briefly state that absolute strength/ROM quality still needs VALD Hub norms or a
         interpretation = constrain_interpretation_language(
             response.choices[0].message.content or ""
         )
-        if len(interpretation.split()) > 245:
+        compact_limit = 340 if "force" in report_type.lower() else 245
+        if len(interpretation.split()) > compact_limit:
             interpretation = compact_interpretation(
-                interpretation, joint_name, sport
+                interpretation, joint_name, sport, report_type
             )
         interpretations[joint_name] = interpretation
 
@@ -591,8 +612,6 @@ def select_key_metrics(
     ]
     for index, metric in enumerate(selected):
         asymmetry_value = bilateral_asymmetry(metric)
-        if index == 0 and asymmetry is not None:
-            asymmetry_value = abs(float(asymmetry["value"]))
         screened = add_metric_status({"name": "Asymmetry", "value": asymmetry_value})
         metric.update(
             {
@@ -601,11 +620,7 @@ def select_key_metrics(
                 "direction": asymmetry_direction(metric),
                 "status": screened.get("status"),
                 "status_label": screened.get("status_label"),
-                "reference_note": (
-                    "VALD-reported asymmetry; operational <=10% screening band."
-                    if index == 0 and asymmetry is not None
-                    else "Calculated from displayed bilateral averages; operational <=10% screening band."
-                ),
+                "reference_note": "Calculated from displayed bilateral averages; operational <=10% screening band.",
             }
         )
     return selected
@@ -925,6 +940,51 @@ def format_metric_for_prompt(test_type: str, metric: dict) -> str:
     ).strip()
 
 
+def forcedecks_interpretation_prompt(
+    *,
+    athlete: dict,
+    report_type: str,
+    sport: str,
+    assessment_date: str,
+    joint_name: str,
+    metric_lines: list[str],
+) -> str:
+    return f"""
+You are an elite sports physiotherapist preparing a ForceDecks assessment report.
+
+Athlete: {athlete.get("name", "Athlete")}
+Age: {athlete.get("age_years") or "not available"}
+Height: {athlete.get("height_cm") or "not available"} cm
+Weight: {athlete.get("weight_kg") or "not available"} kg
+Report system: {report_type}
+Sport: {sport}
+Assessment date: {assessment_date}
+Region: {joint_name}
+
+Measured ForceDecks data:
+{chr(10).join(metric_lines)}
+
+Write a polished ForceDecks assessment in 190-240 words using exactly these Markdown headings:
+**Overall Performance Snapshot**
+**Key Performance Highlights**
+**Test-by-Test Breakdown**
+**Performance Focus**
+
+Follow this content format:
+- Overall Performance Snapshot: summarise jump power, force production, stiffness/RFD, and asymmetry status from the available tests.
+- Key Performance Highlights: mention 2-3 strengths or balanced metrics, then the main concern(s).
+- Test-by-Test Breakdown: describe each available test briefly, using exact metric names and values only when supplied.
+- Performance Focus: explain how improving the flagged physical quality can support {sport} performance.
+
+Use the report style of a world-class sports physiotherapist, but do not diagnose injury or give return-to-sport clearance.
+For scalar metrics such as Jump Height or RSI, describe them as reported outputs unless a benchmark is supplied.
+For bilateral metrics, describe whether symmetry is good when asymmetry is within the operational 10% band.
+If you mention a percentage or value, keep it attached to the exact metric name provided in the measured data.
+Do not invent norms, thresholds beyond the supplied operational 10% asymmetry band, timelines, or exercise prescriptions.
+State briefly that absolute quality needs VALD Hub norms or an approved team benchmark.
+"""
+
+
 def safe_doc_key(name: str) -> str:
     return re.sub(r"[^A-Za-z0-9_]+", "_", name).strip("_") or "Section"
 
@@ -1031,7 +1091,29 @@ def extract_vald_interpretations(doc: Document, section_map: dict[str, str]) -> 
     return interpretations
 
 
-def compact_interpretation(text: str, joint_name: str, sport: str) -> str:
+def compact_interpretation(
+    text: str, joint_name: str, sport: str, report_type: str = ""
+) -> str:
+    if "force" in report_type.lower():
+        headings = """**Overall Performance Snapshot**
+**Key Performance Highlights**
+**Test-by-Test Breakdown**
+**Performance Focus**"""
+        instruction = (
+            "Retain the ForceDecks report format, one useful performance strength, "
+            "the main asymmetry, test-by-test context, and how the focus can support sport performance."
+        )
+        maximum = "240"
+    else:
+        headings = f"""**What Looks Good**
+**Main Asymmetry**
+**Why It Matters For {sport}**
+**Performance Focus**"""
+        instruction = (
+            "Retain one positive movement observation, the main asymmetry, why that joint action matters "
+            f"in {sport}, and how improving the flagged movement quality can support performance."
+        )
+        maximum = "180"
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
@@ -1046,13 +1128,10 @@ def compact_interpretation(text: str, joint_name: str, sport: str) -> str:
                 "role": "user",
                 "content": f"""
 Condense this {joint_name} interpretation for a one-page {sport} report.
-Use exactly these four Markdown headings:
-**What Looks Good**
-**Main Asymmetry**
-**Why It Matters For {sport}**
-**Performance Focus**
+Use exactly these Markdown headings:
+{headings}
 
-Maximum 180 words total. Retain one positive movement observation, the main asymmetry, why that joint action matters in {sport}, and how improving the flagged movement quality can support performance.
+Maximum {maximum} words total. {instruction}
 State briefly that numerical VALD Norms or approved benchmarks are needed for absolute interpretation.
 Do not diagnose injury or introduce a new benchmark.
 

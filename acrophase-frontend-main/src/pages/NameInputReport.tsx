@@ -117,6 +117,8 @@ export default function NameInputReport({ title }: NameInputReportProps) {
   const [availableDates, setAvailableDates] = React.useState<string[]>([]);
   const [assessmentDate, setAssessmentDate] = React.useState("");
   const [sport, setSport] = React.useState("");
+  const [heightCm, setHeightCm] = React.useState("");
+  const [weightKg, setWeightKg] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
   const [isGenerating, setIsGenerating] = React.useState(false);
   const [isDownloadingPdf, setIsDownloadingPdf] = React.useState(false);
@@ -197,6 +199,8 @@ export default function NameInputReport({ title }: NameInputReportProps) {
         assessment_date: assessmentDate,
         sport: sport.trim(),
       });
+      if (heightCm.trim()) query.set("height_cm", heightCm.trim());
+      if (weightKg.trim()) query.set("weight_kg", weightKg.trim());
       if (selectedAthlete) query.set("athlete_id", selectedAthlete.vald_id);
       const response = await fetch(`${BACKEND_URL}/athlete-report?${query}`);
       const data = await response.json();
@@ -362,7 +366,7 @@ export default function NameInputReport({ title }: NameInputReportProps) {
         </div>
 
         <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-          <div className="grid gap-4 lg:grid-cols-3">
+          <div className="grid gap-4 lg:grid-cols-5">
             <div className="relative">
               <label htmlFor="athlete-name" className="block text-sm font-semibold text-gray-700 mb-2">
                 Athlete Name
@@ -450,6 +454,38 @@ export default function NameInputReport({ title }: NameInputReportProps) {
                 onChange={(event) => setSport(event.target.value)}
                 onKeyDown={(event) => event.key === "Enter" && handleLookup()}
                 placeholder="e.g. Badminton"
+                className="w-full p-3 border rounded-md focus:ring-2 focus:ring-orange-500"
+              />
+            </div>
+            <div>
+              <label htmlFor="height-cm" className="block text-sm font-semibold text-gray-700 mb-2">
+                Height (cm)
+              </label>
+              <input
+                id="height-cm"
+                type="number"
+                min="0"
+                step="0.1"
+                value={heightCm}
+                onChange={(event) => setHeightCm(event.target.value)}
+                onKeyDown={(event) => event.key === "Enter" && handleLookup()}
+                placeholder="e.g. 174.7"
+                className="w-full p-3 border rounded-md focus:ring-2 focus:ring-orange-500"
+              />
+            </div>
+            <div>
+              <label htmlFor="weight-kg" className="block text-sm font-semibold text-gray-700 mb-2">
+                Weight (kg)
+              </label>
+              <input
+                id="weight-kg"
+                type="number"
+                min="0"
+                step="0.1"
+                value={weightKg}
+                onChange={(event) => setWeightKg(event.target.value)}
+                onKeyDown={(event) => event.key === "Enter" && handleLookup()}
+                placeholder="e.g. 60.2"
                 className="w-full p-3 border rounded-md focus:ring-2 focus:ring-orange-500"
               />
             </div>
@@ -623,7 +659,7 @@ export default function NameInputReport({ title }: NameInputReportProps) {
                       </h3>
                       <p className="mt-1 text-sm text-gray-500">
                         {joint.tests.length} test{joint.tests.length === 1 ? "" : "s"} /{" "}
-                        {joint.metric_count} bilateral rows displayed / latest {formatDate(joint.last_test_date)}
+                        {joint.metric_count} key metrics displayed / latest {formatDate(joint.last_test_date)}
                       </p>
                     </div>
                   </div>
