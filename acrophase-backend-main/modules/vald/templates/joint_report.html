@@ -2,363 +2,659 @@
 <html>
   <head>
     <meta charset="UTF-8" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet" />
     <style>
       * { box-sizing: border-box; }
+      :root {
+        --paper: #fbfaf7;
+        --surface: #ffffff;
+        --surface-soft: #f6f3ee;
+        --line: #e7e1d8;
+        --ink: #202124;
+        --muted: #706f6b;
+        --faint: #9a9790;
+        --orange: #d96f18;
+        --orange-strong: #b9520e;
+        --amber: #f7d8a6;
+        --green: #4f7d5a;
+        --green-bg: #eaf4ec;
+        --red: #a0443e;
+        --red-bg: #f8e7e3;
+        --shadow: 0 18px 45px rgba(79, 59, 33, .10);
+      }
       body {
         margin: 0;
-        color: #1d1d1f;
+        background: var(--paper);
+        color: var(--ink);
         font-family: -apple-system, BlinkMacSystemFont, Inter, sans-serif;
-        font-size: 12px;
-        line-height: 1.6;
+        font-size: 11px;
+        line-height: 1.45;
       }
       .cover { page-break-after: always; }
       .page { page-break-before: always; }
-      .cover-hero {
-        background: linear-gradient(135deg, #0f172a 0%, #1e293b 68%, #334155 100%);
-        border-radius: 20px;
-        color: #fff;
-        overflow: hidden;
+      .lab-frame {
+        background:
+          radial-gradient(circle at 88% 6%, rgba(217,111,24,.12), transparent 30%),
+          linear-gradient(180deg, #fffdfa 0%, var(--paper) 100%);
+        border: 1px solid var(--line);
+        border-radius: 28px;
+        box-shadow: var(--shadow);
+        min-height: 870px;
         padding: 30px;
         position: relative;
       }
-      .cover-hero::before {
+      .lab-frame::before {
+        background: linear-gradient(90deg, transparent, rgba(217,111,24,.22), transparent);
         content: "";
+        height: 1px;
+        left: 32px;
         position: absolute;
-        right: -70px;
-        top: -80px;
-        height: 300px;
-        width: 300px;
-        border-radius: 50%;
-        background: radial-gradient(circle, rgba(255, 140, 0, .22), transparent 68%);
+        right: 32px;
+        top: 86px;
       }
-      .badge {
-        color: #ff8c00;
-        font-size: 10px;
-        font-weight: 800;
-        letter-spacing: 3px;
-        margin-bottom: 10px;
+      .hero-grid {
+        display: grid;
+        gap: 22px;
+        grid-template-columns: 7fr 5fr;
+        margin-bottom: 28px;
+      }
+      .eyebrow {
+        color: var(--orange-strong);
+        font-size: 9px;
+        font-weight: 900;
+        letter-spacing: 2.4px;
         text-transform: uppercase;
       }
       .athlete-name {
-        font-size: 33px;
-        font-weight: 800;
-        letter-spacing: -1px;
-        line-height: 1.12;
-        position: relative;
+        font-size: 46px;
+        font-weight: 900;
+        letter-spacing: -2px;
+        line-height: .96;
+        margin-top: 18px;
       }
-      .tag-row { display: flex; gap: 10px; margin-top: 16px; position: relative; }
-      .tag {
-        background: rgba(255,255,255,.06);
-        border: 1px solid rgba(255,255,255,.13);
-        border-radius: 20px;
-        color: #ffb347;
+      .hero-subline {
+        color: var(--muted);
+        display: flex;
+        gap: 11px;
         font-size: 12px;
         font-weight: 700;
-        padding: 6px 16px;
+        margin-top: 18px;
+      }
+      .hero-subline span:not(:last-child)::after {
+        color: #c8c0b5;
+        content: "/";
+        margin-left: 11px;
+      }
+      .dossier-card {
+        background: rgba(255,255,255,.86);
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        box-shadow: 0 14px 30px rgba(84, 63, 34, .08);
+        padding: 18px;
       }
       .profile-grid {
-        border-top: 1px solid rgba(255,255,255,.1);
         display: grid;
-        gap: 12px;
-        grid-template-columns: repeat(4, 1fr);
-        margin-top: 25px;
-        padding-top: 18px;
-        position: relative;
+        gap: 10px;
+        grid-template-columns: repeat(2, 1fr);
       }
-      .profile-card {
-        background: rgba(255,255,255,.04);
-        border: 1px solid rgba(255,255,255,.08);
-        border-radius: 12px;
-        padding: 11px 12px;
+      .profile-grid.force {
+        grid-template-columns: repeat(3, 1fr);
       }
-      .profile-label {
-        color: rgba(255,255,255,.45);
-        font-size: 8px;
-        font-weight: 700;
+      .profile-item {
+        background: var(--surface-soft);
+        border: 1px solid #eee8df;
+        border-radius: 15px;
+        padding: 12px;
+      }
+      .label {
+        color: var(--faint);
+        font-size: 7.5px;
+        font-weight: 900;
         letter-spacing: 1.2px;
         text-transform: uppercase;
       }
-      .profile-value { color: #fff; font-size: 13px; font-weight: 700; margin-top: 4px; }
-      .section-heading {
-        align-items: center;
-        border-bottom: 2px solid #f1f5f9;
-        color: #0f172a;
-        display: flex;
-        font-size: 18px;
-        font-weight: 800;
-        letter-spacing: .4px;
-        margin: 27px 0 14px;
-        padding-bottom: 10px;
-      }
-      .section-accent {
-        background: linear-gradient(180deg, #ff8c00, #ff6a00);
-        border-radius: 4px;
-        height: 23px;
-        margin-right: 12px;
-        min-width: 6px;
-      }
-      .concerns {
-        background: #fff;
-        border: 1px solid #fee2e2;
-        border-radius: 12px;
-        margin-top: 18px;
-        padding: 17px 18px;
-      }
-      .concern-title {
-        align-items: center;
-        color: #0f172a;
-        display: flex;
+      .value {
+        color: var(--ink);
         font-size: 13px;
-        font-weight: 800;
-        gap: 8px;
-        margin-bottom: 10px;
+        font-weight: 850;
+        margin-top: 5px;
       }
-      .concern-dot {
-        background: #ef4444;
-        border-radius: 50%;
-        height: 8px;
-        width: 8px;
+      .score-row {
+        display: grid;
+        gap: 14px;
+        grid-template-columns: repeat(3, 1fr);
+        margin: 22px 0 18px;
       }
-      .concern-grid { display: grid; gap: 9px; grid-template-columns: repeat(2, 1fr); }
-      .concern-item {
-        align-items: flex-start;
-        background: #fff7f7;
-        border-radius: 7px;
-        display: flex;
-        flex-direction: column;
-        gap: 5px;
-        justify-content: space-between;
-        padding: 10px 11px;
-      }
-      .concern-movement { color: #0f172a; font-size: 11px; font-weight: 800; }
-      .concern-pill {
-        background: #fee2e2;
-        border-radius: 10px;
-        color: #991b1b;
-        font-size: 9.5px;
-        font-weight: 800;
-        padding: 3px 7px;
-        white-space: nowrap;
-      }
-      .concern-examples { color: #64748b; font-size: 8.8px; line-height: 1.35; }
-      .concern-caption { color: #64748b; font-size: 9px; margin-top: 9px; }
-      .joint-meta { color: #64748b; font-size: 11px; font-weight: 600; margin-left: auto; }
-      .assessment-layout {
-        display: block;
-      }
-      .insight-box {
-        background: linear-gradient(135deg, #fff7ed 0%, #ffffff 58%, #f8fafc 100%);
-        border: 1px solid #fed7aa;
-        border-left: 5px solid #ff8c00;
-        border-radius: 0 14px 14px 0;
-        color: #334155;
-        margin: 14px 0 0;
-        overflow: hidden;
-        padding: 15px 18px;
-        position: relative;
-      }
-      .insight-box::after {
-        color: rgba(15, 23, 42, .035);
-        content: "INSIGHTS";
-        font-size: 28px;
-        font-weight: 900;
-        letter-spacing: 4px;
-        position: absolute;
-        right: 16px;
-        top: 8px;
-      }
-      .interpretation-title {
-        color: #9a3412;
-        font-size: 10px;
-        font-weight: 900;
-        letter-spacing: .9px;
-        margin-bottom: 7px;
-        position: relative;
-        text-transform: uppercase;
-        z-index: 1;
-      }
-      .interpretation { font-size: 10.9px; line-height: 1.45; position: relative; z-index: 1; }
-      .interpretation p { margin: 4px 0; }
-      .interpretation strong { color: #0f172a; }
-      .test-block { margin: 0 0 12px; page-break-inside: avoid; }
-      .group-divider {
+      .score-card {
         align-items: center;
-        color: #0f172a;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 22px;
         display: flex;
-        font-size: 12px;
-        font-weight: 800;
-        justify-content: space-between;
-        margin-bottom: 8px;
+        gap: 16px;
+        padding: 16px;
       }
-      .test-date { color: #94a3b8; font-size: 10px; font-weight: 600; }
-      .dashboard {
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 14px;
+      .ring {
+        --score: 72;
+        align-items: center;
+        background:
+          radial-gradient(circle, #fff 58%, transparent 59%),
+          conic-gradient(var(--orange) calc(var(--score) * 1%), #eee7dd 0);
+        border-radius: 50%;
+        display: flex;
+        height: 86px;
+        justify-content: center;
+        min-width: 86px;
+        width: 86px;
+      }
+      .ring.risk {
+        background:
+          radial-gradient(circle, #fff 58%, transparent 59%),
+          conic-gradient(var(--red) calc(var(--score) * 1%), #eee7dd 0);
+      }
+      .ring.ready {
+        background:
+          radial-gradient(circle, #fff 58%, transparent 59%),
+          conic-gradient(var(--green) calc(var(--score) * 1%), #eee7dd 0);
+      }
+      .ring-number { font-size: 22px; font-weight: 900; letter-spacing: -1px; }
+      .score-title { font-size: 15px; font-weight: 900; letter-spacing: -.2px; }
+      .score-copy { color: var(--muted); font-size: 10px; margin-top: 4px; }
+      .section-title {
+        align-items: flex-end;
+        display: flex;
+        justify-content: space-between;
+        margin: 24px 0 12px;
+      }
+      .section-title h2 {
+        font-size: 20px;
+        font-weight: 900;
+        letter-spacing: -.5px;
+        margin: 0;
+      }
+      .section-title .rule {
+        background: linear-gradient(90deg, var(--orange), transparent);
+        height: 2px;
+        margin-left: 18px;
+        flex: 1;
+      }
+      .concern-grid {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(4, 1fr);
+      }
+      .story-band {
+        background:
+          linear-gradient(135deg, rgba(217,111,24,.10), rgba(255,255,255,.92)),
+          repeating-linear-gradient(90deg, rgba(32,33,36,.035) 0 1px, transparent 1px 34px);
+        border: 1px solid #eadfd2;
+        border-radius: 22px;
+        display: grid;
+        gap: 14px;
+        grid-template-columns: 2fr 1fr 1fr;
+        margin-top: 18px;
+        padding: 18px;
+      }
+      .story-title { font-size: 18px; font-weight: 900; letter-spacing: -.5px; }
+      .story-copy { color: var(--muted); font-size: 10px; line-height: 1.45; margin-top: 6px; }
+      .story-stat {
+        background: rgba(255,255,255,.82);
+        border: 1px solid #efe7dd;
+        border-radius: 17px;
+        padding: 13px;
+      }
+      .story-stat .big { font-size: 22px; font-weight: 900; letter-spacing: -.7px; margin-top: 7px; }
+      .risk-map {
+        display: grid;
+        gap: 4px;
+        grid-template-columns: repeat(12, 1fr);
+        margin-top: 18px;
+      }
+      .risk-cell {
+        background: var(--green-bg);
+        border-radius: 999px;
+        height: 7px;
+      }
+      .risk-cell.red { background: var(--red-bg); }
+      .risk-cell.amber { background: #fff2d8; }
+      .concern-tile {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        min-height: 132px;
+        padding: 14px;
+      }
+      .concern-top {
+        align-items: center;
+        display: flex;
+        justify-content: space-between;
+      }
+      .concern-joint { font-size: 16px; font-weight: 900; }
+      .heat-dot {
+        background: var(--green-bg);
+        border-radius: 50%;
+        height: 12px;
+        width: 12px;
+      }
+      .heat-dot.red { background: var(--red); box-shadow: 0 0 0 5px var(--red-bg); }
+      .concern-count {
+        color: var(--red);
+        font-size: 25px;
+        font-weight: 900;
+        letter-spacing: -1px;
+        margin-top: 14px;
+      }
+      .concern-copy { color: var(--muted); font-size: 8.8px; line-height: 1.35; margin-top: 7px; }
+      .intelligence-page {
+        background: linear-gradient(180deg, #fffdfa 0%, #fbfaf7 100%);
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        min-height: 842px;
+        padding: 18px;
+      }
+      .page-head {
+        align-items: center;
+        display: grid;
+        gap: 18px;
+        grid-template-columns: 5fr 7fr;
+        margin-bottom: 11px;
+      }
+      .joint-title {
+        font-size: 27px;
+        font-weight: 900;
+        letter-spacing: -1.2px;
+        line-height: 1;
+      }
+      .joint-meta {
+        color: var(--muted);
+        font-size: 8.6px;
+        font-weight: 700;
+        margin-top: 8px;
+        text-transform: uppercase;
+      }
+      .overview-panel {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        box-shadow: 0 10px 28px rgba(84,63,34,.07);
+        display: grid;
+        gap: 8px;
+        grid-template-columns: repeat(4, 1fr);
+        padding: 10px;
+      }
+      .overview-stat {
+        border-right: 1px solid #eee8df;
+        min-height: 54px;
+        padding: 2px 7px 2px 2px;
+      }
+      .overview-stat:last-child { border-right: 0; }
+      .stat-value { font-size: 15px; font-weight: 900; letter-spacing: -.4px; margin-top: 3px; }
+      .severity-high { color: var(--red); }
+      .severity-moderate { color: var(--orange-strong); }
+      .severity-controlled { color: var(--green); }
+      .stat-note { color: var(--muted); font-size: 7.8px; line-height: 1.25; margin-top: 3px; }
+      .dashboard-label {
+        align-items: center;
+        color: var(--orange-strong);
+        display: flex;
+        font-size: 9px;
+        font-weight: 900;
+        justify-content: space-between;
+        letter-spacing: 1.3px;
+        margin: 11px 0 7px;
+        text-transform: uppercase;
+      }
+      .metric-matrix {
         display: grid;
         gap: 7px;
         grid-template-columns: repeat(2, 1fr);
-        padding: 9px;
       }
-      .test-panel {
-        background: #fff;
-        border: 1px solid #e2e8f0;
-        border-radius: 10px;
+      .metric-matrix.dense {
+        gap: 5px;
+        grid-template-columns: repeat(3, 1fr);
+      }
+      .movement-panel {
+        background: rgba(255,255,255,.88);
+        border: 1px solid var(--line);
+        border-radius: 15px;
         padding: 7px;
       }
-      .test-panel-title {
-        align-items: center;
-        color: #0f172a;
-        display: flex;
-        font-size: 7.5px;
+      .movement-panel.force {
+        background:
+          linear-gradient(180deg, rgba(255,255,255,.94), rgba(247,243,238,.82)),
+          repeating-linear-gradient(90deg, rgba(32,33,36,.028) 0 1px, transparent 1px 28px);
+      }
+      .movement-title {
+        color: var(--ink);
+        font-size: 8px;
         font-weight: 900;
-        justify-content: space-between;
-        letter-spacing: .45px;
+        letter-spacing: .6px;
         margin-bottom: 5px;
         text-transform: uppercase;
       }
-      .test-panel-date { color: #94a3b8; font-size: 7px; font-weight: 800; }
-      .metric-grid { display: grid; gap: 5px; grid-template-columns: repeat(2, 1fr); }
-      .dense .metric-grid, .ultra .metric-grid { grid-template-columns: repeat(2, 1fr); }
       .metric-card {
-        background: #fdfdfd;
-        border: 1px solid #edf2f7;
-        border-radius: 7px;
-        box-shadow: 0 1px 2px rgba(15,23,42,.025);
-        padding: 6px 6px;
+        background: var(--surface-soft);
+        border: 1px solid #eee8df;
+        border-radius: 12px;
+        margin-top: 4px;
+        padding: 6px;
       }
-      .metric-header { align-items: flex-start; display: flex; justify-content: space-between; margin-bottom: 4px; }
+      .metric-card.force {
+        border-left: 3px solid #d96f18;
+      }
+      .metric-matrix.dense .movement-panel { padding: 5px; }
+      .metric-matrix.dense .movement-title { font-size: 6.7px; margin-bottom: 3px; }
+      .metric-matrix.dense .metric-card { padding: 4px; margin-top: 3px; }
+      .metric-matrix.dense .metric-name { font-size: 6.4px; }
+      .metric-matrix.dense .label { font-size: 6.2px; letter-spacing: .7px; }
+      .metric-matrix.dense .metric-chip { font-size: 6px; padding: 1px 4px; }
+      .metric-matrix.dense .lr-row { grid-template-columns: 38px 1fr 38px; gap: 3px; margin-top: 3px; }
+      .metric-matrix.dense .lr-value { font-size: 8px; }
+      .metric-matrix.dense .lr-label { font-size: 5.5px; }
+      .metric-matrix.dense .balance-bar { height: 5px; }
+      .metric-matrix.dense .asym-track { height: 3px; margin-top: 3px; }
+      .metric-card.priority {
+        background: linear-gradient(135deg, #fff7ed 0%, #fff 55%, #f9eeeb 100%);
+        border-color: #e9c7bd;
+      }
+      .metric-top {
+        align-items: flex-start;
+        display: flex;
+        gap: 8px;
+        justify-content: space-between;
+      }
       .metric-name {
-        color: #64748b;
-        font-size: 7px;
-        font-weight: 800;
-        letter-spacing: .28px;
-        line-height: 1.3;
-        max-width: 78%;
+        color: var(--ink);
+        font-size: 7.5px;
+        font-weight: 900;
+        letter-spacing: .25px;
+        line-height: 1.2;
         text-transform: uppercase;
       }
-      .metric-unit { color: #94a3b8; font-size: 7px; font-weight: 700; }
-      .metric-body { align-items: center; display: flex; gap: 5px; }
-      .side-box { align-items: baseline; display: flex; gap: 4px; }
-      .side-label { color: #94a3b8; font-size: 7px; font-weight: 800; }
-      .side-value { color: #0f172a; font-size: 9.5px; font-weight: 800; }
-      .asym-tag {
-        border-radius: 5px;
-        font-size: 7.5px;
-        font-weight: 800;
-        margin-left: auto;
-        padding: 2px 4px;
+      .metric-chip {
+        border-radius: 999px;
+        font-size: 7px;
+        font-weight: 900;
+        padding: 2px 5px;
+        white-space: nowrap;
       }
-      .status-green { background: #dcfce7; color: #166534; }
-      .status-red { background: #fee2e2; color: #991b1b; }
-      .metric-note { color: #94a3b8; font-size: 9px; margin-top: 7px; }
-      .dense .metric-card, .ultra .metric-card { padding: 5px 5px; }
-      .dense .metric-body, .ultra .metric-body { gap: 4px; }
-      .dense .side-value, .ultra .side-value { font-size: 9px; }
-      .dense .metric-name, .ultra .metric-name { font-size: 6.5px; }
-      .dense .asym-tag, .ultra .asym-tag { font-size: 7px; padding: 2px 4px; }
+      .chip-controlled { background: var(--green-bg); color: var(--green); }
+      .chip-moderate { background: #fff2d8; color: var(--orange-strong); }
+      .chip-high { background: var(--red-bg); color: var(--red); }
+      .lr-row {
+        align-items: center;
+        display: grid;
+        gap: 5px;
+        grid-template-columns: 52px 1fr 52px;
+        margin-top: 5px;
+      }
+      .lr-value { font-size: 10px; font-weight: 900; letter-spacing: -.2px; }
+      .lr-value.right { text-align: right; }
+      .lr-label { color: var(--faint); display: block; font-size: 7px; font-weight: 900; letter-spacing: .9px; text-transform: uppercase; }
+      .balance-bar {
+        background: #e8e1d8;
+        border-radius: 999px;
+        display: flex;
+        height: 6px;
+        overflow: hidden;
+        position: relative;
+      }
+      .balance-bar::after {
+        background: rgba(32,33,36,.38);
+        content: "";
+        height: 100%;
+        left: calc(50% - .5px);
+        position: absolute;
+        top: 0;
+        width: 1px;
+      }
+      .bar-r { background: linear-gradient(90deg, #d8d2c8, #c4b9aa); }
+      .bar-l { background: linear-gradient(90deg, var(--amber), #e8a653); }
+      .asym-track {
+        background: #ebe5dc;
+        border-radius: 999px;
+        height: 4px;
+        margin-top: 5px;
+        overflow: hidden;
+      }
+      .asym-fill { height: 100%; border-radius: 999px; }
+      .fill-controlled { background: var(--green); }
+      .fill-moderate { background: var(--orange); }
+      .fill-high { background: var(--red); }
+      .insight-grid {
+        display: grid;
+        gap: 7px;
+        grid-template-columns: repeat(3, 1fr);
+        margin-top: 10px;
+      }
+      .insight-card {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 13px;
+        min-height: 54px;
+        padding: 8px;
+      }
+      .insight-title {
+        color: var(--orange-strong);
+        font-size: 7.2px;
+        font-weight: 900;
+        letter-spacing: 1px;
+        margin-bottom: 4px;
+        text-transform: uppercase;
+      }
+      .insight-body {
+        color: #3b3a36;
+        font-size: 8px;
+        line-height: 1.25;
+      }
+      .insight-body strong { color: var(--ink); }
+      .compact-insights {
+        background: rgba(255,255,255,.86);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        display: grid;
+        gap: 8px;
+        grid-template-columns: repeat(2, 1fr);
+        margin-top: 8px;
+        padding: 8px;
+      }
+      .compact-insight-title {
+        color: var(--orange-strong);
+        font-size: 7px;
+        font-weight: 900;
+        letter-spacing: .9px;
+        text-transform: uppercase;
+      }
+      .compact-insight-body {
+        color: var(--muted);
+        font-size: 7.5px;
+        line-height: 1.2;
+        margin-top: 2px;
+      }
     </style>
   </head>
   <body>
     {% set athlete = data.athlete or {} %}
+    {% set summary = data.visual_summary or {} %}
+    {% set is_force = "force" in ((data.report_type or "") | lower) %}
     <section class="cover">
-      <div class="cover-hero">
-        <div class="badge">High Performance VALD Assessment</div>
-        <div class="athlete-name">{{ athlete.name or "Athlete" }}</div>
-        <div class="tag-row">
-          <div class="tag">{{ data.sport or "Sport not provided" }}</div>
-          {% if athlete.age_years %}<div class="tag">{{ athlete.age_years }} yrs</div>{% endif %}
-          <div class="tag">{{ data.report_type or "VALD Report" }}</div>
-        </div>
-        <div class="profile-grid">
-          <div class="profile-card">
-            <div class="profile-label">Assessment</div>
-            <div class="profile-value">{{ data.assessment_date or "-" }}</div>
+      <div class="lab-frame">
+        <div class="hero-grid">
+          <div>
+            <div class="eyebrow">Confidential Athlete Intelligence Report</div>
+            <div class="athlete-name">{{ athlete.name or "Athlete" }}</div>
+            <div class="hero-subline">
+              <span>{{ data.sport or "Sport not provided" }}</span>
+              {% if athlete.age_years %}<span>{{ athlete.age_years }} yrs</span>{% endif %}
+              <span>{{ data.report_type or "VALD Assessment" }}</span>
+            </div>
           </div>
-          <div class="profile-card">
-            <div class="profile-label">Date of Birth</div>
-            <div class="profile-value">{{ athlete.date_of_birth[:10] if athlete.date_of_birth else "Unavailable" }}</div>
-          </div>
-          <div class="profile-card">
-            <div class="profile-label">Height</div>
-            <div class="profile-value">{{ (athlete.height_cm ~ " cm") if athlete.height_cm else "Unavailable" }}</div>
-          </div>
-          <div class="profile-card">
-            <div class="profile-label">Weight</div>
-            <div class="profile-value">{{ (athlete.weight_kg ~ " kg") if athlete.weight_kg else "Unavailable" }}</div>
+          <div class="dossier-card">
+            <div class="profile-grid{% if is_force %} force{% endif %}">
+              <div class="profile-item"><div class="label">Assessment Date</div><div class="value">{{ data.assessment_date or "-" }}</div></div>
+              <div class="profile-item"><div class="label">{% if is_force %}Injury Status{% else %}Date of Birth{% endif %}</div><div class="value">{% if is_force %}Not specified{% else %}{{ athlete.date_of_birth[:10] if athlete.date_of_birth else "Unavailable" }}{% endif %}</div></div>
+              <div class="profile-item"><div class="label">Height</div><div class="value">{{ (athlete.height_cm ~ " cm") if athlete.height_cm else "Unavailable" }}</div></div>
+              <div class="profile-item"><div class="label">Weight</div><div class="value">{{ (athlete.weight_kg ~ " kg") if athlete.weight_kg else "Unavailable" }}</div></div>
+              {% if is_force %}
+              <div class="profile-item"><div class="label">Testing Date</div><div class="value">{{ data.assessment_date or "-" }}</div></div>
+              <div class="profile-item"><div class="label">Event</div><div class="value">{{ data.sport or "Not provided" }}</div></div>
+              {% endif %}
+            </div>
           </div>
         </div>
-      </div>
-      <div class="section-heading"><div class="section-accent"></div>Assessment Overview</div>
-      <div class="concerns">
-        <div class="concern-title"><span class="concern-dot"></span>Areas of Concern for Review</div>
-        {% if data.concern_summary %}
-        <div class="concern-grid">
-          {% for item in data.concern_summary %}
-          <div class="concern-item">
-            <span class="concern-movement">{{ item.joint }}</span>
-            <span class="concern-pill">{{ item.count }} asymmetr{{ "y" if item.count == 1 else "ies" }}</span>
-            {% if item.examples %}
-            <span class="concern-examples">Examples: {{ item.examples | join(", ") }}</span>
-            {% endif %}
+
+        <div class="score-row">
+          <div class="score-card">
+            <div class="ring{% if is_force %} ready{% endif %}" style="--score: {{ summary.performance_score or 0 }}"><div class="ring-number">{{ summary.performance_score or 0 }}</div></div>
+            <div>
+              <div class="label">{% if is_force %}Overall Readiness Score{% else %}Overall Performance Score{% endif %}</div>
+              <div class="score-title">{% if is_force %}Readiness intelligence{% else %}Movement balance index{% endif %}</div>
+              <div class="score-copy">Derived from displayed VALD metrics and asymmetry status.</div>
+            </div>
           </div>
+          <div class="score-card">
+            <div class="ring risk" style="--score: {{ summary.risk_score or 0 }}"><div class="ring-number">{{ summary.risk_score or 0 }}</div></div>
+            <div>
+              <div class="label">Overall Asymmetry Risk Score</div>
+              <div class="score-title">{{ summary.risk_label or "Controlled" }} review priority</div>
+              <div class="score-copy">{{ summary.red_count or 0 }} of {{ summary.total_metrics or 0 }} key metrics exceed the operational screen.</div>
+            </div>
+          </div>
+          <div class="score-card">
+            <div class="ring ready" style="--score: {{ summary.performance_score or 0 }}"><div class="ring-number">{{ summary.performance_score or 0 }}</div></div>
+            <div>
+              <div class="label">{% if is_force %}Return-To-Sport Status{% else %}Testing Type{% endif %}</div>
+              <div class="score-title">{% if is_force %}{{ summary.return_to_sport_status or "Monitor asymmetry load" }}{% else %}DynaMo ROM / strength{% endif %}</div>
+              <div class="score-copy">{% if is_force %}Status is a presentation layer based on displayed risk flags.{% else %}Joint-by-joint bilateral analysis follows this dossier page.{% endif %}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-title"><h2>Assessment Overview</h2><div class="rule"></div></div>
+        <div class="story-band">
+          <div>
+            <div class="label">{% if is_force %}Performance Story{% else %}Movement Intelligence{% endif %}</div>
+            <div class="story-title">{% if is_force %}Readiness, asymmetry and force-expression profile{% else %}Joint movement quality and asymmetry profile{% endif %}</div>
+            <div class="story-copy">
+              {% if is_force %}
+              This page is the executive ForceDecks brief: strengths, risk flags and return-to-sport attention points are surfaced first, then each test module expands into the detailed report.
+              {% else %}
+              This page is the executive DynaMo brief: the major joint movements of concern are surfaced first, followed by the joint-by-joint analysis and clinical performance interpretation.
+              {% endif %}
+            </div>
+          </div>
+          <div class="story-stat"><div class="label">Readiness Status</div><div class="big severity-{{ 'high' if summary.risk_label == 'High' else 'moderate' if summary.risk_label == 'Moderate' else 'controlled' }}">{{ summary.readiness_status or "Ready with maintenance" }}</div></div>
+          <div class="story-stat"><div class="label">Primary Screen</div><div class="big">{{ summary.total_metrics or 0 }}</div><div class="story-copy">Key metrics reviewed</div></div>
+        </div>
+        <div class="risk-map">
+          {% for joint in data.joints or [] %}
+            {% for test in joint.tests or [] %}
+              {% for metric in test.metrics or [] %}
+              <div class="risk-cell{% if metric.status == 'red' %} red{% elif (metric.asymmetry_value or 0) > 5 %} amber{% endif %}"></div>
+              {% endfor %}
+            {% endfor %}
           {% endfor %}
         </div>
-        <div class="concern-caption">Flagged above the operational 10% asymmetry screening band for practitioner review; not a diagnosis or VALD Norms classification.</div>
-        {% else %}
-        <div class="concern-caption">No displayed bilateral movements exceed the operational 10% asymmetry screening band.</div>
-        {% endif %}
+        <div class="concern-grid">
+          {% if data.concern_summary %}
+          {% for item in data.concern_summary[:4] %}
+          <div class="concern-tile">
+            <div class="concern-top">
+              <div class="concern-joint">{{ item.joint }}</div>
+              <div class="heat-dot{% if item.count > 0 %} red{% endif %}"></div>
+            </div>
+            <div class="concern-count">{{ item.count }}</div>
+            <div class="label">Asymmetries</div>
+            {% if item.examples %}<div class="concern-copy">Key examples: {{ item.examples | join(", ") }}</div>{% endif %}
+          </div>
+          {% endfor %}
+          {% else %}
+          <div class="concern-tile">
+            <div class="concern-top">
+              <div class="concern-joint">Controlled</div>
+              <div class="heat-dot"></div>
+            </div>
+            <div class="concern-count">0</div>
+            <div class="label">Asymmetries</div>
+            <div class="concern-copy">No displayed metric crossed the asymmetry screen in this report set.</div>
+          </div>
+          {% endif %}
+        </div>
       </div>
     </section>
+
     {% for joint in data.joints or [] %}
+    {% set visual = joint.visual or {} %}
     <section class="page">
-      <div class="section-heading">
-        <div class="section-accent"></div>{{ joint.joint }} Assessment
-        <span class="joint-meta">{{ joint.tests|length }} test{% if joint.tests|length != 1 %}s{% endif %} | {{ joint.metric_count }} key metrics</span>
-      </div>
-      <div class="assessment-layout">
-        <div class="test-block">
-          <div class="group-divider">
-            <span>Performance Dashboard</span>
-            <span class="test-date">{{ data.assessment_date or "" }}</span>
+      <div class="intelligence-page">
+        <div class="page-head">
+          <div>
+            <div class="eyebrow">Kinetic Chain Module</div>
+            <div class="joint-title">{{ joint.joint }}</div>
+            <div class="joint-meta">{{ joint.tests|length }} tests / {{ joint.metric_count }} key metrics / {{ data.assessment_date or "" }}</div>
           </div>
-          <div class="dashboard{% if joint.metric_count > 12 %} ultra{% elif joint.metric_count > 8 %} dense{% endif %}">
-            {% for test in joint.tests %}
-            <div class="test-panel">
-              <div class="test-panel-title">
-                <span>{{ test.test_type }}</span>
-                <span class="test-panel-date">{{ test.test_date[:10] if test.test_date else "" }}</span>
-              </div>
-              <div class="metric-grid">
-                {% for metric in test.metrics %}
-                <div class="metric-card">
-                  <div class="metric-header">
-                    <span class="metric-name">{{ metric.name }}</span>
-                    <span class="metric-unit">{{ metric.unit or "-" }}</span>
-                  </div>
-                  <div class="metric-body">
-                    {% if metric.get("right_value") is not none and metric.get("left_value") is not none %}
-                    <span class="side-box"><span class="side-label">R</span><span class="side-value">{{ metric.get("right_value") | metric_value }}</span></span>
-                    <span class="side-box"><span class="side-label">L</span><span class="side-value">{{ metric.get("left_value") | metric_value }}</span></span>
-                    <span class="asym-tag status-{{ metric.status or 'green' }}">{{ metric.get("asymmetry_value") | metric_value }}{{ metric.get("asymmetry_unit") or "%" }}{% if metric.get("direction") == "Towards Right" %}R{% elif metric.get("direction") == "Towards Left" %}L{% endif %}</span>
-                    {% else %}
-                    <span class="side-box"><span class="side-label">Value</span><span class="side-value">{{ metric.get("value") | metric_value }}</span></span>
-                    <span class="asym-tag status-neutral">Key Metric</span>
-                    {% endif %}
-                  </div>
+          <div class="overview-panel">
+            <div class="overview-stat"><div class="label">Asymmetries</div><div class="stat-value">{{ visual.asymmetry_count }}</div><div class="stat-note">Above the 10% screen</div></div>
+            <div class="overview-stat"><div class="label">Severity</div><div class="stat-value severity-{{ visual.severity_class }}">{{ visual.severity }}</div><div class="stat-note">{{ visual.key_asymmetry | metric_value }}% peak asymmetry</div></div>
+            <div class="overview-stat"><div class="label">Key Concern</div><div class="stat-note" style="margin-top:7px;">{{ visual.key_concern }}</div></div>
+            <div class="overview-stat"><div class="label">Athletic Impact</div><div class="stat-note" style="margin-top:7px;">{{ visual.impact }}</div></div>
+          </div>
+        </div>
+
+        <div class="dashboard-label">
+          <span>Performance Dashboard</span>
+          <span>{{ visual.score }}% controlled metrics</span>
+        </div>
+        <div class="metric-matrix{% if joint.metric_count > 12 %} dense{% endif %}">
+          {% for test in joint.tests %}
+          <div class="movement-panel{% if is_force %} force{% endif %}">
+            <div class="movement-title">{{ test.test_type }}</div>
+            {% for metric in test.metrics %}
+            {% set mvisual = metric.visual or {} %}
+            <div class="metric-card{% if metric.status == 'red' %} priority{% endif %}{% if is_force %} force{% endif %}">
+              <div class="metric-top">
+                <div>
+                  <div class="metric-name">{{ metric.name }}</div>
+                  <div class="label">{{ metric.unit or "No unit" }}</div>
                 </div>
-                {% endfor %}
+                <div class="metric-chip chip-{{ mvisual.severity_class or 'controlled' }}">{{ metric.get("asymmetry_value") | metric_value }}{{ metric.get("asymmetry_unit") or "%" }}{% if metric.get("direction") == "Towards Right" %}R{% elif metric.get("direction") == "Towards Left" %}L{% endif %}</div>
               </div>
+              {% if metric.get("right_value") is not none and metric.get("left_value") is not none %}
+              <div class="lr-row">
+                <div class="lr-value right"><span class="lr-label">Right</span>{{ metric.get("right_value") | metric_value }}</div>
+                <div class="balance-bar">
+                  <div class="bar-r" style="width: {{ mvisual.right_pct or 50 }}%"></div>
+                  <div class="bar-l" style="width: {{ mvisual.left_pct or 50 }}%"></div>
+                </div>
+                <div class="lr-value"><span class="lr-label">Left</span>{{ metric.get("left_value") | metric_value }}</div>
+              </div>
+              {% else %}
+              <div class="lr-row" style="grid-template-columns: 1fr;">
+                <div class="lr-value"><span class="lr-label">Value</span>{{ metric.get("value") | metric_value }}</div>
+              </div>
+              {% endif %}
+              <div class="asym-track"><div class="asym-fill fill-{{ mvisual.severity_class or 'controlled' }}" style="width: {{ mvisual.asymmetry_width or 0 }}%"></div></div>
             </div>
             {% endfor %}
           </div>
-          <div class="metric-note">Showing selected key metrics for this test; bilateral rows include compact asymmetry where VALD supplies right and left values.</div>
+          {% endfor %}
         </div>
-        <div class="insight-box">
-          <div class="interpretation-title">Sports Physiotherapy Interpretation</div>
-          <div class="interpretation">{{ data.interpretations_html.get(joint.joint, "<p>No technical interpretation provided.</p>") | safe }}</div>
+
+          {% set sections = data.insight_sections.get(joint.joint, []) if data.insight_sections else [] %}
+        {% if joint.metric_count <= 12 %}
+        <div class="insight-grid">
+          {% for item in sections[:5] %}
+          <div class="insight-card">
+            <div class="insight-title">{% if item.title == "What Looks Good" %}Performing Well{% elif item.title == "Main Asymmetry" %}Key Asymmetries{% elif item.title.startswith("Why") %}Athletic Impact{% elif item.title == "Performance Focus" %}Performance Priority{% else %}{{ item.title }}{% endif %}</div>
+            <div class="insight-body">{{ item.body }}</div>
+          </div>
+          {% endfor %}
+          <div class="insight-card">
+            <div class="insight-title">Recommended Development Focus</div>
+            <div class="insight-body">Prioritise the highest-asymmetry movement pattern, then confirm progress with repeat DynaMo testing and approved team benchmarks.</div>
+          </div>
         </div>
+        {% endif %}
       </div>
     </section>
     {% endfor %}

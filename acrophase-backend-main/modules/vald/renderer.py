@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import base64
 import os
+import re
 from copy import deepcopy
 from collections import Counter, defaultdict
 from typing import Any
@@ -59,6 +60,7 @@ def _render_pdf(buffer, data: dict[str, Any]) -> None:
         }
         for joint, count in concern_counts.most_common()
     ]
+    enrich_visual_summary(payload)
 
     base_dir = os.path.dirname(os.path.abspath(__file__))
     templates_dir = os.path.join(base_dir, "templates")
@@ -80,22 +82,22 @@ def _render_pdf(buffer, data: dict[str, Any]) -> None:
             page.pdf(
                 format="A4",
                 print_background=True,
-                margin={"top": "125px", "bottom": "70px", "left": "65px", "right": "65px"},
+                margin={"top": "92px", "bottom": "58px", "left": "58px", "right": "58px"},
                 display_header_footer=True,
                 header_template=f"""
-                <div style="width:100%; padding:24px 65px 16px 65px; font-family:-apple-system,BlinkMacSystemFont,Inter,sans-serif; border-bottom:2px solid #ff8c00; display:flex; justify-content:space-between; align-items:flex-end;">
+                <div style="width:100%; padding:22px 58px 12px 58px; font-family:-apple-system,BlinkMacSystemFont,Inter,sans-serif; border-bottom:1px solid #eadfd2; display:flex; justify-content:space-between; align-items:flex-end; background:#fbfaf7;">
                   <div style="display:flex; align-items:center;">
-                    <img src="data:image/png;base64,{logo_base64}" style="height:32px; margin-right:16px;" />
-                    <span style="font-weight:800; color:#ff8c00; font-size:18px; letter-spacing:1.6px;">ACROPHASE</span>
+                    <img src="data:image/png;base64,{logo_base64}" style="height:28px; margin-right:13px;" />
+                    <span style="font-weight:900; color:#b9520e; font-size:13px; letter-spacing:2px;">ACROPHASE</span>
                   </div>
                   <div style="text-align:right;">
-                    <div style="font-weight:700; font-size:20px; letter-spacing:0.3px; color:#111;">{athlete_name}</div>
-                    <div style="font-size:13px; font-weight:600; color:#555; margin-top:4px;">{payload.get("sport") or ""} | {payload.get("assessment_date") or ""}</div>
+                    <div style="font-weight:800; font-size:13px; letter-spacing:0.2px; color:#202124;">{athlete_name}</div>
+                    <div style="font-size:9px; font-weight:700; color:#706f6b; margin-top:3px; letter-spacing:.9px; text-transform:uppercase;">{payload.get("sport") or ""} | {payload.get("assessment_date") or ""}</div>
                   </div>
                 </div>""",
                 footer_template="""
-                <div style="width:100%; padding:0 65px; font-size:8px; font-family:Inter,sans-serif; color:#a0a0a0; display:flex; justify-content:space-between;">
-                  <span>High Performance VALD Assessment</span>
+                <div style="width:100%; padding:0 58px; font-size:8px; font-family:Inter,sans-serif; color:#a49b90; display:flex; justify-content:space-between;">
+                  <span>Confidential High Performance VALD Assessment</span>
                   <span>Page <span class="pageNumber"></span> / <span class="totalPages"></span></span>
                 </div>
                 """,
@@ -107,3 +109,155 @@ def _render_pdf(buffer, data: dict[str, Any]) -> None:
 async def render_vald_joint_pdf(buffer, data: dict[str, Any]) -> None:
     loop = asyncio.get_running_loop()
     await loop.run_in_executor(None, _render_pdf, buffer, data)
+
+
+def enrich_visual_summary(payload: dict[str, Any]) -> None:
+    metrics = [
+        metric
+        for joint in payload.get("joints") or []
+        for test in joint.get("tests") or []
+        for metric in test.get("metrics") or []
+    ]
+    bilateral_metrics = [
+        metric
+        for metric in metrics
+        if metric.get("right_value") is not None and metric.get("left_value") is not None
+    ]
+    red_count = sum(1 for metric in metrics if metric.get("status") == "red")
+    total_count = len(metrics) or 1
+    bilateral_count = len(bilateral_metrics) or 1
+    payload["visual_summary"] = {
+        "performance_score": round((1 - red_count / total_count) * 100),
+        "risk_score": round(red_count / bilateral_count * 100),
+        "total_metrics": len(metrics),
+        "red_count": red_count,
+        "risk_label": severity_label(red_count / bilateral_count * 100),
+        "readiness_status": readiness_status(red_count / total_count * 100),
+        "return_to_sport_status": return_to_sport_status(red_count / bilateral_count * 100),
+    }
+    payload["insight_sections"] = {
+        joint: parse_interpretation_sections(text)
+        for joint, text in (payload.get("interpretations") or {}).items()
+    }
+    for joint in payload.get("joints") or []:
+        joint_metrics = [
+            metric
+            for test in joint.get("tests") or []
+            for metric in test.get("metrics") or []
+        ]
+        red_metrics = [metric for metric in joint_metrics if metric.get("status") == "red"]
+        max_metric = max(
+            joint_metrics,
+            key=lambda metric: float(metric.get("asymmetry_value") or 0),
+            default={},
+        )
+        max_asymmetry = float(max_metric.get("asymmetry_value") or 0)
+        joint["visual"] = {
+            "asymmetry_count": len(red_metrics),
+            "severity": severity_label(max_asymmetry),
+            "severity_class": severity_class(max_asymmetry),
+            "score": round((1 - len(red_metrics) / (len(joint_metrics) or 1)) * 100),
+            "key_concern": max_metric.get("name") or "No major concern",
+            "key_asymmetry": max_asymmetry,
+            "impact": impact_summary(joint.get("joint"), max_metric),
+        }
+        for metric in joint_metrics:
+            enrich_metric_visual(metric)
+
+
+def enrich_metric_visual(metric: dict[str, Any]) -> None:
+    asymmetry = float(metric.get("asymmetry_value") or 0)
+    metric["visual"] = {
+        "severity_class": severity_class(asymmetry),
+        "severity_label": severity_label(asymmetry),
+        "asymmetry_width": min(100, round(asymmetry * 3)),
+    }
+    right = metric.get("right_value")
+    left = metric.get("left_value")
+    if right is None or left is None:
+        return
+    try:
+        right_value = abs(float(right))
+        left_value = abs(float(left))
+    except (TypeError, ValueError):
+        return
+    total = right_value + left_value
+    if not total:
+        return
+    metric["visual"].update(
+        {
+            "right_pct": round(right_value / total * 100, 1),
+            "left_pct": round(left_value / total * 100, 1),
+        }
+    )
+
+
+def severity_label(value: float) -> str:
+    if value >= 20:
+        return "High"
+    if value > 10:
+        return "Moderate"
+    return "Controlled"
+
+
+def severity_class(value: float) -> str:
+    if value >= 20:
+        return "high"
+    if value > 10:
+        return "moderate"
+    return "controlled"
+
+
+def readiness_status(value: float) -> str:
+    if value >= 26:
+        return "Needs targeted review"
+    if value > 12:
+        return "Proceed with monitoring"
+    return "Ready with maintenance"
+
+
+def return_to_sport_status(value: float) -> str:
+    if value >= 26:
+        return "Modified exposure advised"
+    if value > 12:
+        return "Monitor asymmetry load"
+    return "Full training compatible"
+
+
+def impact_summary(joint_name: str | None, metric: dict[str, Any]) -> str:
+    joint = (joint_name or "This region").lower()
+    metric_name = str(metric.get("name") or "movement quality").lower()
+    if "hip" in joint:
+        return "Lunging, deceleration, court coverage and first-step power."
+    if "knee" in joint:
+        return "Braking control, repeated jumping and change-of-direction tolerance."
+    if "ankle" in joint:
+        return "Push-off efficiency, landing control and repeated court transitions."
+    if "shoulder" in joint:
+        return "Overhead control, racket acceleration and repeat-stroke robustness."
+    if "force" in metric_name:
+        return "Force expression and repeatable bilateral output."
+    return "Movement efficiency and sport-specific repeatability."
+
+
+def parse_interpretation_sections(text: str) -> list[dict[str, str]]:
+    sections: list[dict[str, str]] = []
+    current_title: str | None = None
+    current_lines: list[str] = []
+    for line in (text or "").splitlines():
+        clean = line.strip()
+        if not clean:
+            continue
+        match = re.match(r"^\*\*(.+?)\*\*$", clean)
+        if match:
+            if current_title:
+                sections.append(
+                    {"title": current_title, "body": " ".join(current_lines).strip()}
+                )
+            current_title = match.group(1)
+            current_lines = []
+        else:
+            current_lines.append(clean)
+    if current_title:
+        sections.append({"title": current_title, "body": " ".join(current_lines).strip()})
+    return sections

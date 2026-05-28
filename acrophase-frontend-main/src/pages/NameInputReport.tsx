@@ -6,6 +6,7 @@ import {
   Download,
   Dumbbell,
   FileText,
+  Loader2,
   Ruler,
   Sparkles,
   Trophy,
@@ -125,6 +126,7 @@ export default function NameInputReport({ title }: NameInputReportProps) {
   const [isDownloadingWord, setIsDownloadingWord] = React.useState(false);
   const [isUploadingWord, setIsUploadingWord] = React.useState(false);
   const [wordDraftUploaded, setWordDraftUploaded] = React.useState(false);
+  const [workflowMessage, setWorkflowMessage] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [reportData, setReportData] = React.useState<ReportData | null>(null);
   const [interpretations, setInterpretations] = React.useState<Record<string, string>>({});
@@ -132,6 +134,8 @@ export default function NameInputReport({ title }: NameInputReportProps) {
   const sectionKey = title.toLowerCase().includes("force")
     ? "forcedecks"
     : "dynamometer";
+  const isWorkflowBusy =
+    isLoading || isGenerating || isDownloadingWord || isUploadingWord || isDownloadingPdf;
 
   React.useEffect(() => {
     const query = athleteName.trim();
@@ -187,6 +191,7 @@ export default function NameInputReport({ title }: NameInputReportProps) {
 
     setIsLoading(true);
     setError(null);
+    setWorkflowMessage("Syncing VALD data for the selected assessment date...");
     setReportData(null);
     setInterpretations({});
     setWordDraftUploaded(false);
@@ -212,8 +217,10 @@ export default function NameInputReport({ title }: NameInputReportProps) {
         throw new Error(message);
       }
       setReportData(data);
+      setWorkflowMessage("VALD data loaded. You can generate interpretations next.");
     } catch (err: any) {
       setError(err.message || "Unable to load VALD report data.");
+      setWorkflowMessage(null);
     } finally {
       setIsLoading(false);
     }
@@ -226,6 +233,7 @@ export default function NameInputReport({ title }: NameInputReportProps) {
     if (!reportData || !metricsAvailable) return;
     setIsGenerating(true);
     setError(null);
+    setWorkflowMessage("Generating joint-by-joint interpretation content. Please wait before exporting Word.");
     try {
       const response = await fetch(`${BACKEND_URL}/vald/joint-interpretations`, {
         method: "POST",
@@ -244,8 +252,10 @@ export default function NameInputReport({ title }: NameInputReportProps) {
       }
       setInterpretations(data.interpretations || {});
       setWordDraftUploaded(false);
+      setWorkflowMessage("Interpretations generated. Export the draft Word document when you are ready to edit.");
     } catch (err: any) {
       setError(err.message || "Unable to generate interpretations.");
+      setWorkflowMessage(null);
     } finally {
       setIsGenerating(false);
     }
@@ -255,6 +265,7 @@ export default function NameInputReport({ title }: NameInputReportProps) {
     if (!reportData || Object.keys(interpretations).length === 0) return;
     setIsDownloadingWord(true);
     setError(null);
+    setWorkflowMessage("Building the editable draft Word document. Please wait for the download to start.");
     try {
       const response = await fetch(`${BACKEND_URL}/vald/draft-word`, {
         method: "POST",
@@ -278,8 +289,10 @@ export default function NameInputReport({ title }: NameInputReportProps) {
       link.download = `${reportData.athlete.name.replace(/\s+/g, "_")}_VALD_Draft.docx`;
       link.click();
       window.URL.revokeObjectURL(url);
+      setWorkflowMessage("Draft Word document exported. Edit it, then upload the final Word document.");
     } catch (err: any) {
       setError(err.message || "Unable to create the draft Word document.");
+      setWorkflowMessage(null);
     } finally {
       setIsDownloadingWord(false);
     }
@@ -289,6 +302,7 @@ export default function NameInputReport({ title }: NameInputReportProps) {
     if (!reportData || !file) return;
     setIsUploadingWord(true);
     setError(null);
+    setWorkflowMessage("Reading the uploaded Word document and replacing report content. Please wait.");
     try {
       const formData = new FormData();
       formData.append("file", file);
@@ -303,8 +317,10 @@ export default function NameInputReport({ title }: NameInputReportProps) {
       }
       setInterpretations(data.interpretations || {});
       setWordDraftUploaded(true);
+      setWorkflowMessage("Final Word document uploaded. The PDF will now use your edited content.");
     } catch (err: any) {
       setError(err.message || "Unable to read the uploaded Word document.");
+      setWorkflowMessage(null);
     } finally {
       setIsUploadingWord(false);
       if (wordUploadRef.current) wordUploadRef.current.value = "";
@@ -315,6 +331,7 @@ export default function NameInputReport({ title }: NameInputReportProps) {
     if (!reportData || Object.keys(interpretations).length === 0) return;
     setIsDownloadingPdf(true);
     setError(null);
+    setWorkflowMessage("Generating the premium PDF report. This can take a moment; please do not click again.");
     try {
       const response = await fetch(`${BACKEND_URL}/vald/final-pdf`, {
         method: "POST",
@@ -338,8 +355,10 @@ export default function NameInputReport({ title }: NameInputReportProps) {
       link.download = `${reportData.athlete.name.replace(/\s+/g, "_")}_VALD_Joint_Report.pdf`;
       link.click();
       window.URL.revokeObjectURL(url);
+      setWorkflowMessage("Final PDF generated and downloaded.");
     } catch (err: any) {
       setError(err.message || "Unable to create the final PDF report.");
+      setWorkflowMessage(null);
     } finally {
       setIsDownloadingPdf(false);
     }
@@ -493,9 +512,9 @@ export default function NameInputReport({ title }: NameInputReportProps) {
           <div className="mt-5 flex items-center gap-4">
             <button
               onClick={handleLookup}
-              disabled={!athleteName.trim() || !assessmentDate || !sport.trim() || isLoading}
+              disabled={!athleteName.trim() || !assessmentDate || !sport.trim() || isWorkflowBusy}
               className={`bg-orange-600 text-white px-7 py-3 rounded-md font-medium transition-opacity ${
-                athleteName.trim() && assessmentDate && sport.trim() && !isLoading
+                athleteName.trim() && assessmentDate && sport.trim() && !isWorkflowBusy
                   ? "hover:bg-orange-700"
                   : "opacity-50 cursor-not-allowed"
               }`}
@@ -514,6 +533,26 @@ export default function NameInputReport({ title }: NameInputReportProps) {
           </div>
         )}
 
+        {(workflowMessage || isWorkflowBusy) && (
+          <div className="mt-6 rounded-xl border border-orange-200 bg-orange-50 px-5 py-4 text-orange-950 shadow-sm">
+            <div className="flex items-start gap-3">
+              {isWorkflowBusy ? (
+                <Loader2 className="mt-0.5 h-5 w-5 animate-spin text-orange-600" />
+              ) : (
+                <Sparkles className="mt-0.5 h-5 w-5 text-orange-600" />
+              )}
+              <div>
+                <p className="font-semibold">
+                  {isWorkflowBusy ? "Working on your report..." : "Report workflow updated"}
+                </p>
+                <p className="mt-1 text-sm text-orange-900">
+                  {workflowMessage || "Please wait until the current step finishes before clicking the next button."}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {reportData && (
           <div className="mt-8 space-y-6">
             <section className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
@@ -529,26 +568,26 @@ export default function NameInputReport({ title }: NameInputReportProps) {
                 <div className="flex flex-col sm:flex-row gap-3">
                   <button
                     onClick={generateInterpretations}
-                    disabled={!metricsAvailable || isGenerating}
+                    disabled={!metricsAvailable || isWorkflowBusy}
                     className={`inline-flex items-center justify-center gap-2 rounded-md px-5 py-3 font-medium text-white ${
-                      metricsAvailable && !isGenerating
+                      metricsAvailable && !isWorkflowBusy
                         ? "bg-gray-900 hover:bg-gray-800"
                         : "bg-gray-400 cursor-not-allowed"
                     }`}
                   >
-                    <Sparkles size={17} />
+                    {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles size={17} />}
                     {isGenerating ? "Generating..." : "Generate joint interpretations"}
                   </button>
                   <button
                     onClick={downloadDraftWord}
-                    disabled={Object.keys(interpretations).length === 0 || isDownloadingWord}
+                    disabled={Object.keys(interpretations).length === 0 || isWorkflowBusy}
                     className={`inline-flex items-center justify-center gap-2 rounded-md px-5 py-3 font-medium ${
-                      Object.keys(interpretations).length > 0 && !isDownloadingWord
+                      Object.keys(interpretations).length > 0 && !isWorkflowBusy
                         ? "border border-gray-300 text-gray-800 hover:bg-gray-50"
                         : "border border-gray-200 text-gray-400 cursor-not-allowed"
                     }`}
                   >
-                    <FileText size={17} />
+                    {isDownloadingWord ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText size={17} />}
                     {isDownloadingWord ? "Building Word..." : "Export draft Word document"}
                   </button>
                   <input
@@ -560,26 +599,26 @@ export default function NameInputReport({ title }: NameInputReportProps) {
                   />
                   <button
                     onClick={() => wordUploadRef.current?.click()}
-                    disabled={!reportData || isUploadingWord}
+                    disabled={!reportData || isWorkflowBusy}
                     className={`inline-flex items-center justify-center gap-2 rounded-md px-5 py-3 font-medium ${
-                      reportData && !isUploadingWord
+                      reportData && !isWorkflowBusy
                         ? "border border-blue-600 text-blue-700 hover:bg-blue-50"
                         : "border border-gray-200 text-gray-400 cursor-not-allowed"
                     }`}
                   >
-                    <Upload size={17} />
+                    {isUploadingWord ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload size={17} />}
                     {isUploadingWord ? "Reading Word..." : "Upload final Word document"}
                   </button>
                   <button
                     onClick={downloadFinalPdf}
-                    disabled={Object.keys(interpretations).length === 0 || isDownloadingPdf}
+                    disabled={Object.keys(interpretations).length === 0 || isWorkflowBusy}
                     className={`inline-flex items-center justify-center gap-2 rounded-md px-5 py-3 font-medium ${
-                      Object.keys(interpretations).length > 0 && !isDownloadingPdf
+                      Object.keys(interpretations).length > 0 && !isWorkflowBusy
                         ? "border border-orange-600 text-orange-700 hover:bg-orange-50"
                         : "border border-gray-200 text-gray-400 cursor-not-allowed"
                     }`}
                   >
-                    <Download size={17} />
+                    {isDownloadingPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download size={17} />}
                     {isDownloadingPdf ? "Building PDF..." : "Download final PDF"}
                   </button>
                 </div>
