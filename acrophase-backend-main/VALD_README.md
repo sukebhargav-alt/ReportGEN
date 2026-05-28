@@ -31,7 +31,12 @@ Trigger a full Dynamo + ForceDecks sync:
 curl -X POST https://your-backend.onrender.com/vald/sync
 ```
 
-Recommended cron schedule: every 6 hours. The sync is idempotent and has a 4-minute runtime budget.
+Recommended cron schedule: every 6 hours. The sync is idempotent and has a
+4-minute runtime budget. Scheduled synchronization refreshes active profiles and
+indexes the latest 30 days of DynaMo and ForceDecks assessment dates promptly.
+When an athlete and assessment date are requested, that selected date's detailed
+metrics are hydrated directly from VALD if stored data is missing, so historical
+reports do not depend on a bulk detail backfill completing first.
 
 ## Lookup
 
@@ -53,6 +58,22 @@ curl "https://your-backend.onrender.com/athlete-report?name=Jane%20Doe&device=dy
 
 `assessment_date` scopes the result to tests recorded on that UTC calendar day.
 `sport` is retained in report context for sport-specific interpretation and PDF output.
+
+Athlete typeahead:
+
+```bash
+curl "https://your-backend.onrender.com/vald/athletes?q=Sidd"
+```
+
+This refreshes the active VALD profile directory periodically and returns matching
+athletes with their stable VALD IDs. Pass the selected `athlete_id` to
+`/athlete-report` to avoid ambiguous names.
+
+Available assessment dates for the selected athlete and surface:
+
+```bash
+curl "https://your-backend.onrender.com/vald/athletes/ATHLETE_ID/assessment-dates?device=dynamometer"
+```
 
 Response shape:
 
@@ -96,6 +117,9 @@ measurements are selected (with no maximum or minimum measurement rows). Availab
 asymmetry is shown on the matching bilateral row together with the higher side.
 Every displayed bilateral row includes compact asymmetry output such as `12.2%R`;
 unpaired measurements are excluded from the bilateral report.
+For ForceDecks, bilateral `Mean` measures are treated as the average-only report
+surface; for DynaMo, bilateral `Avg` measures are used. Maximum rows are never
+used in the final report.
 Asymmetry percentages are screened with a visible operational `<=10%` band;
 this is marked clearly as a screening aid, not as a VALD Norms result.
 Official VALD Norms are age/sex-matched percentile comparisons in VALD Hub;

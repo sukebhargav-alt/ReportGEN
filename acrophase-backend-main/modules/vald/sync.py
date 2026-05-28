@@ -13,6 +13,7 @@ from modules.vald.repository import ValdRepository
 
 MAX_RUN_SECONDS = 240
 BATCH_DELAY_SECONDS = 0.5
+INITIAL_SYNC_LOOKBACK_DAYS = 30
 
 HEALTHY_THRESHOLDS = {
     "CMJ": 60,
@@ -46,6 +47,7 @@ class ValdSyncService:
         self.repo = ValdRepository()
         self.started_at = time.monotonic()
         self.warnings: list[dict[str, str]] = []
+        self.latest_profiles: list[dict[str, Any]] = []
 
     def has_time(self) -> bool:
         return time.monotonic() - self.started_at < MAX_RUN_SECONDS
@@ -81,6 +83,7 @@ class ValdSyncService:
 
     async def sync_profiles(self, tenant_id: str) -> int:
         profiles = await self.api.profiles(tenant_id)
+        self.latest_profiles = profiles
         rows = []
         for profile in profiles:
             vald_id = pick(profile, "profileId", "athleteId", "id")
@@ -90,8 +93,100 @@ class ValdSyncService:
         await self.repo.upsert("vald_athletes", rows, on_conflict="vald_id")
         return len(rows)
 
+    async def refresh_athlete_date(
+        self, tenant_id: str, athlete_id: str, assessment_date: str, device: str
+    ) -> dict[str, int]:
+        if device == "dynamo":
+            return await self.refresh_dynamo_athlete_date(
+                tenant_id, athlete_id, assessment_date
+            )
+        if device == "forcedecks":
+            return await self.refresh_forcedecks_athlete_date(
+                tenant_id, athlete_id, assessment_date
+            )
+        return {"testsUpserted": 0, "metricsUpserted": 0}
+
+    async def refresh_dynamo_athlete_date(
+        self, tenant_id: str, athlete_id: str, assessment_date: str
+    ) -> dict[str, int]:
+        modified_from = f"{assessment_date}T00:00:00Z"
+        tests_upserted = 0
+        metrics_upserted = 0
+        page = 1
+        while page <= 100 and self.has_time():
+            payload = await self.api.dynamo_tests(tenant_id, modified_from, page)
+            tests = normalize_list(payload)
+            matching = [
+                test
+                for test in tests
+                if pick(test, "profileId", "athleteId") == athlete_id
+                and str(pick(test, "recordedUTC", "recordedUtc", "testDateUtc", "startTimeUTC") or "").startswith(assessment_date)
+            ]
+            test_rows = [
+                row for test in matching if (row := self.dynamo_test_row(test))
+            ]
+            await self.ensure_athlete_stubs(test_rows)
+            await self.repo.upsert("vald_tests", test_rows, on_conflict="vald_test_id")
+            tests_upserted += len(test_rows)
+
+            semaphore = asyncio.Semaphore(2)
+
+            async def extract(test: dict[str, Any]) -> tuple[str, list[dict[str, Any]]]:
+                test_id = pick(test, "testId", "id")
+                async with semaphore:
+                    detail = await self.api.dynamo_detail(tenant_id, test_id)
+                return test_id, self.extract_dynamo_metrics(test, detail or {})
+
+            extracted = await asyncio.gather(*(extract(test) for test in matching))
+            for test_id, metrics in extracted:
+                await self.repo.delete_metrics_for_tests([test_id])
+                metrics_upserted += await self.repo.insert_metrics(metrics)
+            total_pages = int(pick(payload, "totalPages") or page)
+            if not tests or page >= total_pages:
+                break
+            page += 1
+        return {"testsUpserted": tests_upserted, "metricsUpserted": metrics_upserted}
+
+    async def refresh_forcedecks_athlete_date(
+        self, tenant_id: str, athlete_id: str, assessment_date: str
+    ) -> dict[str, int]:
+        tests_upserted = 0
+        metrics_upserted = 0
+        page = 1
+        while page <= 100 and self.has_time():
+            payload = await self.api.forcedecks_tests(
+                tenant_id, assessment_date, assessment_date, page
+            )
+            tests = normalize_list(payload)
+            matching = [
+                test
+                for test in tests
+                if pick(test, "profileId", "athleteId") == athlete_id
+            ]
+            rows = unique_rows(
+                [row for test in matching if (row := self.forcedecks_test_row(test))],
+                "vald_test_id",
+            )
+            await self.ensure_athlete_stubs(rows)
+            await self.repo.upsert("vald_tests", rows, on_conflict="vald_test_id")
+            tests_upserted += len(rows)
+            for test in matching:
+                test_id = pick(test, "testId", "id")
+                metrics = await self.extract_forcedecks_metrics(tenant_id, test)
+                if test_id and metrics and not only_noise(metrics):
+                    await self.repo.delete_metrics_for_tests([test_id])
+                    metrics_upserted += await self.repo.insert_metrics(metrics)
+            if not tests or len(tests) < 50:
+                break
+            page += 1
+        return {"testsUpserted": tests_upserted, "metricsUpserted": metrics_upserted}
+
     async def sync_dynamo(self, tenant_id: str) -> dict[str, Any]:
         modified_from = await self.repo.get_sync_state("dynamo")
+        if modified_from.startswith("2020-01-01"):
+            modified_from = (
+                datetime.now(UTC) - timedelta(days=INITIAL_SYNC_LOOKBACK_DAYS)
+            ).isoformat()
         page = 1
         tests_upserted = 0
         metrics_upserted = 0
@@ -125,15 +220,6 @@ class ValdSyncService:
                     latest_modified,
                     pick(test, "lastModifiedUTC", "lastModifiedUtc", "modifiedDateUtc"),
                 )
-                try:
-                    detail = await self.api.dynamo_detail(tenant_id, test_id)
-                    metrics = self.extract_dynamo_metrics(test, detail or {})
-                    await self.repo.delete_metrics_for_tests([test_id])
-                    metrics_upserted += await self.repo.insert_metrics(metrics)
-                except Exception as exc:
-                    warning = {"device": "dynamo", "testId": test_id, "error": str(exc)}
-                    self.warnings.append(warning)
-                    errors.append(warning)
 
             total_pages = int(pick(payload, "totalPages") or page)
             if page >= total_pages:
@@ -168,13 +254,12 @@ class ValdSyncService:
 
     async def sync_forcedecks(self, tenant_id: str) -> dict[str, Any]:
         today = datetime.now(UTC).date()
-        date_to = today - timedelta(days=1)
-        date_from = date_to - timedelta(days=181)
+        date_to = today
+        date_from = date_to - timedelta(days=INITIAL_SYNC_LOOKBACK_DAYS)
         page = 1
         tests_upserted = 0
         metrics_upserted = 0
         errors = []
-        candidate_tests = []
 
         while self.has_time():
             try:
@@ -196,34 +281,17 @@ class ValdSyncService:
             await self.ensure_athlete_stubs(test_rows)
             await self.repo.upsert("vald_tests", test_rows, on_conflict="vald_test_id")
             tests_upserted += len(test_rows)
-            candidate_tests.extend(tests)
-
-            for test in tests:
-                test_id = pick(test, "testId", "id")
-                if not test_id:
-                    continue
-                try:
-                    metrics = await self.extract_forcedecks_metrics(tenant_id, test)
-                    if metrics and not only_noise(metrics):
-                        await self.repo.delete_metrics_for_tests([test_id])
-                        metrics_upserted += await self.repo.insert_metrics(metrics)
-                except Exception as exc:
-                    warning = {"device": "forcedecks", "testId": test_id, "error": str(exc)}
-                    self.warnings.append(warning)
-                    errors.append(warning)
 
             if len(tests) < 50:
                 break
             page += 1
 
-        healed_count, healed_metrics = await self.heal_forcedecks(tenant_id, candidate_tests)
-        metrics_upserted += healed_metrics
         await self.repo.update_sync_state("forcedecks", datetime.now(UTC).isoformat())
 
         return {
             "testsUpserted": tests_upserted,
             "metricsUpserted": metrics_upserted,
-            "healedCount": healed_count,
+            "healedCount": 0,
             "errors": errors,
         }
 

@@ -103,6 +103,8 @@ class ValdApiClient:
     async def forcedecks_trials(
         self, tenant_id: str, test_id: str, trials_url: str | None = None
     ) -> Any:
+        if trials_url and trials_url.startswith("/"):
+            trials_url = f"{self.host('extforcedecks')}{trials_url}"
         return await self.request(
             trials_url
             or f"{self.host('extforcedecks')}/v2019q3/teams/{tenant_id}/tests/{test_id}/trials"

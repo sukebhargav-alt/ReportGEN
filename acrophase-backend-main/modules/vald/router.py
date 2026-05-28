@@ -5,6 +5,7 @@ from datetime import date, datetime
 from io import BytesIO
 import logging
 import re
+import time
 from typing import Optional
 
 from fastapi import APIRouter, Body, Query
@@ -19,6 +20,9 @@ from modules.vald.sync import ValdSyncService, pick
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+_profile_refresh_at = 0.0
+_PROFILE_REFRESH_SECONDS = 300
+_athlete_profile_cache: dict[str, dict] = {}
 
 
 @router.post("/vald/sync")
@@ -33,9 +37,35 @@ async def sync_vald_data():
         )
 
 
+@router.get("/vald/athletes")
+async def search_vald_athletes(q: str = Query("", max_length=100)):
+    try:
+        await refresh_vald_profiles_if_needed(force=not q.strip())
+        athletes = await ValdRepository().lookup_athletes_by_name(q.strip())
+        return {"athletes": athletes}
+    except Exception as exc:
+        logger.warning("VALD athlete search refresh failed: %s", exc)
+        athletes = await ValdRepository().lookup_athletes_by_name(q.strip())
+        return {"athletes": athletes}
+
+
+@router.get("/vald/athletes/{athlete_id}/assessment-dates")
+async def vald_assessment_dates(
+    athlete_id: str, device: Optional[str] = None
+):
+    device_key = {"dynamometer": "dynamo", "forcedecks": "forcedecks"}.get(
+        device or "", device
+    )
+    dates = await ValdRepository().fetch_assessment_dates(
+        athlete_id, device=device_key
+    )
+    return {"assessment_dates": dates}
+
+
 @router.get("/athlete-report")
 async def athlete_report(
     name: str = Query(..., min_length=1),
+    athlete_id: Optional[str] = None,
     date_from: Optional[str] = Query(None, alias="from"),
     date_to: Optional[str] = Query(None, alias="to"),
     test_type: Optional[str] = None,
@@ -43,6 +73,7 @@ async def athlete_report(
     device: Optional[str] = None,
     assessment_date: Optional[str] = None,
     sport: Optional[str] = None,
+    refresh: bool = False,
 ):
     if assessment_date:
         try:
@@ -56,12 +87,21 @@ async def athlete_report(
                 ),
             )
     repo = ValdRepository()
-    matches = await repo.lookup_athletes_by_name(name.strip())
-    exact_matches = [
-        athlete
-        for athlete in matches
-        if athlete.get("name", "").strip().lower() == name.strip().lower()
-    ]
+    try:
+        await refresh_vald_profiles_if_needed()
+    except Exception as exc:
+        logger.warning("VALD profile refresh failed during report lookup: %s", exc)
+    selected_athlete = await repo.fetch_athlete_by_id(athlete_id) if athlete_id else None
+    matches = [selected_athlete] if selected_athlete else await repo.lookup_athletes_by_name(name.strip())
+    exact_matches = (
+        [selected_athlete]
+        if selected_athlete
+        else [
+            athlete
+            for athlete in matches
+            if athlete.get("name", "").strip().lower() == name.strip().lower()
+        ]
+    )
 
     if not exact_matches:
         if matches:
@@ -94,46 +134,56 @@ async def athlete_report(
         device or "", device
     )
     tests = await repo.fetch_tests_for_athlete(
-        athlete["vald_id"],
-        date_from=date_from,
-        date_to=date_to,
-        test_type=test_type,
-        device=device_key,
-        assessment_date=assessment_date,
+        athlete["vald_id"], date_from=date_from, date_to=date_to, test_type=test_type,
+        device=device_key, assessment_date=assessment_date,
     )
+    stored_metrics = await repo.fetch_metrics_for_tests(
+        [test["vald_test_id"] for test in tests]
+    )
+    must_hydrate = not tests or not any(stored_metrics.values())
+    if assessment_date and device_key in {"dynamo", "forcedecks"} and (refresh or must_hydrate):
+        try:
+            api = ValdApiClient()
+            tenants = await api.tenants()
+            tenant_id = pick(tenants[0], "tenantId", "id", "teamId") if tenants else None
+            if tenant_id:
+                service = ValdSyncService()
+                await service.refresh_athlete_date(
+                    tenant_id, athlete["vald_id"], assessment_date, device_key
+                )
+        except Exception as exc:
+            logger.warning("VALD selected-date refresh failed for %s: %s", athlete["vald_id"], exc)
+        tests = await repo.fetch_tests_for_athlete(
+            athlete["vald_id"], date_from=date_from, date_to=date_to, test_type=test_type,
+            device=device_key, assessment_date=assessment_date,
+        )
     if latest_only:
         tests = most_recent_per_test_type(tests)
 
     metrics_by_test = await repo.fetch_metrics_for_tests(
         [test["vald_test_id"] for test in tests]
     )
-    try:
-        api = ValdApiClient()
-        tenants = await api.tenants()
-        tenant_id = pick(tenants[0], "tenantId", "id", "teamId") if tenants else None
-        if tenant_id:
-            service = ValdSyncService()
-            service.repo = repo
-            repaired = await service.repair_empty_dynamo_metrics(
-                tenant_id, tests, metrics_by_test
-            )
-            if repaired:
-                metrics_by_test = await repo.fetch_metrics_for_tests(
-                    [test["vald_test_id"] for test in tests]
+    if not any(metrics_by_test.values()) and tests:
+        try:
+            api = ValdApiClient()
+            tenants = await api.tenants()
+            tenant_id = pick(tenants[0], "tenantId", "id", "teamId") if tenants else None
+            if tenant_id:
+                service = ValdSyncService()
+                service.repo = repo
+                repaired = await service.repair_empty_dynamo_metrics(
+                    tenant_id, tests, metrics_by_test
                 )
-            profiles = await api.profiles(tenant_id, [athlete["vald_id"]])
-            profile = next(
-                (
-                    item
-                    for item in profiles
-                    if pick(item, "profileId", "athleteId", "id") == athlete["vald_id"]
-                ),
-                None,
-            )
-            if profile:
-                athlete = enriched_athlete(athlete, profile)
+                if repaired:
+                    metrics_by_test = await repo.fetch_metrics_for_tests(
+                        [test["vald_test_id"] for test in tests]
+                    )
+        except Exception as exc:
+            logger.warning("VALD metric repair failed for %s: %s", athlete["vald_id"], exc)
+    try:
+        athlete = await enrich_athlete_from_vald_cached(athlete)
     except Exception as exc:
-        logger.warning("VALD live enrichment failed for %s: %s", athlete["vald_id"], exc)
+        logger.warning("VALD demographic enrichment failed for %s: %s", athlete["vald_id"], exc)
 
     response = {
         "athlete": athlete,
@@ -142,10 +192,12 @@ async def athlete_report(
         "forcedecks": {"tests": [], "joints": []},
     }
 
-    for test in tests:
+    for test in consolidate_bilateral_tests(tests, metrics_by_test):
         section = "dynamometer" if test["device"] == "dynamo" else "forcedecks"
-        metrics = metrics_by_test.get(test["vald_test_id"], [])
-        selected_metrics = select_key_metrics(test.get("test_type") or "", metrics)
+        metrics = test.get("combined_metrics") or metrics_by_test.get(test["vald_test_id"], [])
+        selected_metrics = select_key_metrics(
+            test.get("test_type") or "", metrics, device=test.get("device") or ""
+        )
         if not selected_metrics:
             continue
         response[section]["tests"].append(
@@ -162,6 +214,43 @@ async def athlete_report(
         response[section]["joints"] = group_tests_by_joint(response[section]["tests"])
 
     return response
+
+
+async def refresh_vald_profiles_if_needed(force: bool = False) -> None:
+    global _profile_refresh_at
+    if not force and time.monotonic() - _profile_refresh_at < _PROFILE_REFRESH_SECONDS:
+        return
+    service = ValdSyncService()
+    tenants = await service.api.tenants()
+    tenant_id = pick(tenants[0], "tenantId", "id", "teamId") if tenants else None
+    if tenant_id:
+        await service.sync_profiles(tenant_id)
+        for profile in service.latest_profiles:
+            vald_id = pick(profile, "profileId", "athleteId", "id")
+            if vald_id:
+                _athlete_profile_cache[vald_id] = profile
+        _profile_refresh_at = time.monotonic()
+
+
+async def enrich_athlete_from_vald_cached(athlete: dict) -> dict:
+    vald_id = athlete["vald_id"]
+    if vald_id in _athlete_profile_cache:
+        return enriched_athlete(athlete, _athlete_profile_cache[vald_id])
+    api = ValdApiClient()
+    tenants = await api.tenants()
+    tenant_id = pick(tenants[0], "tenantId", "id", "teamId") if tenants else None
+    if not tenant_id:
+        return athlete
+    profiles = await api.profiles(tenant_id, [vald_id])
+    profile = next(
+        (item for item in profiles if pick(item, "profileId", "athleteId", "id") == vald_id),
+        None,
+    )
+    if not profile:
+        return athlete
+    enriched = enriched_athlete(athlete, profile)
+    _athlete_profile_cache[vald_id] = profile
+    return enriched
 
 
 @router.post("/vald/joint-interpretations")
@@ -286,6 +375,31 @@ def calculate_age(date_of_birth: str | None) -> int | None:
     return today.year - born.year - ((today.month, today.day) < (born.month, born.day))
 
 
+def consolidate_bilateral_tests(
+    tests: list[dict], metrics_by_test: dict[str, list[dict]]
+) -> list[dict]:
+    combined: OrderedDict[tuple[str, str, str], dict] = OrderedDict()
+    for test in tests:
+        test_type = str(test.get("test_type") or "")
+        base_type = re.sub(r"\s*-\s*(Right|Left)\s*$", "", test_type, flags=re.IGNORECASE)
+        date_key = str(test.get("test_date") or "")[:10]
+        key = (str(test.get("device") or ""), base_type, date_key)
+        if test.get("device") != "dynamo":
+            key = (str(test.get("device") or ""), test_type, str(test.get("vald_test_id") or ""))
+        if key not in combined:
+            combined[key] = {
+                **test,
+                "test_type": base_type,
+                "combined_metrics": [],
+                "source_test_ids": [],
+            }
+        combined[key]["combined_metrics"].extend(
+            metrics_by_test.get(test.get("vald_test_id"), [])
+        )
+        combined[key]["source_test_ids"].append(test.get("vald_test_id"))
+    return list(combined.values())
+
+
 def group_tests_by_joint(tests: list[dict]) -> list[dict]:
     grouped: OrderedDict[str, list[dict]] = OrderedDict()
     for test in tests:
@@ -309,7 +423,9 @@ def group_tests_by_joint(tests: list[dict]) -> list[dict]:
     ]
 
 
-def select_key_metrics(test_type: str, metrics: list[dict], limit: int = 5) -> list[dict]:
+def select_key_metrics(
+    test_type: str, metrics: list[dict], limit: int = 5, device: str = ""
+) -> list[dict]:
     asymmetry = next(
         (
             metric
@@ -318,18 +434,29 @@ def select_key_metrics(test_type: str, metrics: list[dict], limit: int = 5) -> l
         ),
         None,
     )
-    average_only = [
-        metric
-        for metric in metrics
-        if "avg " in str(metric.get("name") or "").lower()
-        and not (
-            test_type.lower().startswith("strength:")
-            and "range of motion" in str(metric.get("name") or "").lower()
-        )
-    ]
+    if device == "forcedecks":
+        average_only = [
+            metric
+            for metric in metrics
+            if re.search(r"\bmean\b", str(metric.get("name") or ""), re.IGNORECASE)
+            and "ratio" not in str(metric.get("name") or "").lower()
+        ]
+    else:
+        average_only = [
+            metric
+            for metric in metrics
+            if "avg " in str(metric.get("name") or "").lower()
+            and not (
+                test_type.lower().startswith("strength:")
+                and "range of motion" in str(metric.get("name") or "").lower()
+            )
+        ]
     ranked = sorted(
         enumerate(average_only),
-        key=lambda item: (-metric_priority(test_type, item[1].get("name") or ""), item[0]),
+        key=lambda item: (
+            -metric_priority(test_type, item[1].get("name") or "", device),
+            item[0],
+        ),
     )
     rows: OrderedDict[tuple[str, str | None], dict] = OrderedDict()
     for _, metric in ranked:
@@ -376,10 +503,20 @@ def select_key_metrics(test_type: str, metrics: list[dict], limit: int = 5) -> l
     return selected
 
 
-def metric_priority(test_type: str, name: str) -> int:
+def metric_priority(test_type: str, name: str, device: str = "") -> int:
     label = name.lower()
     if "asymmetry" in label:
         return 120
+    if device == "forcedecks":
+        priorities = (
+            ("concentric mean force", 115),
+            ("eccentric mean force", 110),
+            ("landing mean force", 105),
+            ("mean power", 100),
+            ("mean impulse", 95),
+            ("mean", 80),
+        )
+        return next((score for term, score in priorities if term in label), 20)
     if test_type.lower().startswith("strength:"):
         strength_priorities = (
             ("avg force", 115),

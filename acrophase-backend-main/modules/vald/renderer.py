@@ -29,6 +29,20 @@ def _render_pdf(buffer, data: dict[str, Any]) -> None:
         joint: markdown.markdown(text)
         for joint, text in (payload.get("interpretations") or {}).items()
     }
+    payload["concern_movements"] = [
+        {
+            "joint": joint.get("joint"),
+            "test_type": test.get("test_type"),
+            "metric": metric.get("name"),
+            "asymmetry_value": metric.get("asymmetry_value"),
+            "asymmetry_unit": metric.get("asymmetry_unit") or "%",
+            "direction": metric.get("direction"),
+        }
+        for joint in payload.get("joints") or []
+        for test in joint.get("tests") or []
+        for metric in test.get("metrics") or []
+        if metric.get("status") == "red"
+    ]
 
     base_dir = os.path.dirname(os.path.abspath(__file__))
     templates_dir = os.path.join(base_dir, "templates")
@@ -60,7 +74,7 @@ def _render_pdf(buffer, data: dict[str, Any]) -> None:
                   </div>
                   <div style="text-align:right;">
                     <div style="font-weight:700; font-size:20px; letter-spacing:0.3px; color:#111;">{athlete_name}</div>
-                    <div style="font-size:13px; font-weight:600; color:#555; margin-top:4px;">{payload.get("sport") or ""} · {payload.get("assessment_date") or ""}</div>
+                    <div style="font-size:13px; font-weight:600; color:#555; margin-top:4px;">{payload.get("sport") or ""} | {payload.get("assessment_date") or ""}</div>
                   </div>
                 </div>""",
                 footer_template="""

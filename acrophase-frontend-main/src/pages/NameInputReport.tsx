@@ -58,6 +58,11 @@ interface Athlete {
   demographics_note?: string;
 }
 
+interface AthleteOption {
+  vald_id: string;
+  name: string;
+}
+
 interface ReportData {
   athlete: Athlete;
   context: { assessment_date?: string | null; sport?: string | null };
@@ -104,6 +109,10 @@ function ProfileValue({
 export default function NameInputReport({ title }: NameInputReportProps) {
   const navigate = useNavigate();
   const [athleteName, setAthleteName] = React.useState("");
+  const [selectedAthlete, setSelectedAthlete] = React.useState<AthleteOption | null>(null);
+  const [athleteOptions, setAthleteOptions] = React.useState<AthleteOption[]>([]);
+  const [isSearchingAthletes, setIsSearchingAthletes] = React.useState(false);
+  const [availableDates, setAvailableDates] = React.useState<string[]>([]);
   const [assessmentDate, setAssessmentDate] = React.useState("");
   const [sport, setSport] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
@@ -115,6 +124,55 @@ export default function NameInputReport({ title }: NameInputReportProps) {
   const sectionKey = title.toLowerCase().includes("force")
     ? "forcedecks"
     : "dynamometer";
+
+  React.useEffect(() => {
+    const query = athleteName.trim();
+    if (selectedAthlete?.name === query || query.length < 2) {
+      setAthleteOptions([]);
+      return;
+    }
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      setIsSearchingAthletes(true);
+      try {
+        const response = await fetch(
+          `${BACKEND_URL}/vald/athletes?q=${encodeURIComponent(query)}`,
+          { signal: controller.signal },
+        );
+        const data = await response.json();
+        setAthleteOptions(response.ok ? data.athletes || [] : []);
+      } catch (err: any) {
+        if (err.name !== "AbortError") setAthleteOptions([]);
+      } finally {
+        if (!controller.signal.aborted) setIsSearchingAthletes(false);
+      }
+    }, 250);
+    return () => {
+      controller.abort();
+      window.clearTimeout(timer);
+    };
+  }, [athleteName, selectedAthlete]);
+
+  React.useEffect(() => {
+    if (!selectedAthlete) {
+      setAvailableDates([]);
+      return;
+    }
+    let cancelled = false;
+    fetch(
+      `${BACKEND_URL}/vald/athletes/${selectedAthlete.vald_id}/assessment-dates?device=${sectionKey}`,
+    )
+      .then((response) => response.json())
+      .then((data) => {
+        if (!cancelled) setAvailableDates(data.assessment_dates || []);
+      })
+      .catch(() => {
+        if (!cancelled) setAvailableDates([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedAthlete, sectionKey]);
 
   const handleLookup = async () => {
     if (!athleteName.trim() || !assessmentDate || !sport.trim()) return;
@@ -132,6 +190,7 @@ export default function NameInputReport({ title }: NameInputReportProps) {
         assessment_date: assessmentDate,
         sport: sport.trim(),
       });
+      if (selectedAthlete) query.set("athlete_id", selectedAthlete.vald_id);
       const response = await fetch(`${BACKEND_URL}/athlete-report?${query}`);
       const data = await response.json();
       if (!response.ok) {
@@ -236,7 +295,7 @@ export default function NameInputReport({ title }: NameInputReportProps) {
 
         <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
           <div className="grid gap-4 lg:grid-cols-3">
-            <div>
+            <div className="relative">
               <label htmlFor="athlete-name" className="block text-sm font-semibold text-gray-700 mb-2">
                 Athlete Name
               </label>
@@ -244,10 +303,42 @@ export default function NameInputReport({ title }: NameInputReportProps) {
                 id="athlete-name"
                 type="text"
                 value={athleteName}
-                onChange={(event) => setAthleteName(event.target.value)}
+                onChange={(event) => {
+                  setAthleteName(event.target.value);
+                  setSelectedAthlete(null);
+                  setAssessmentDate("");
+                }}
                 placeholder="Enter athlete name"
                 className="w-full p-3 border rounded-md focus:ring-2 focus:ring-orange-500"
               />
+              {(isSearchingAthletes || athleteOptions.length > 0) && (
+                <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-md border border-gray-200 bg-white shadow-lg">
+                  {isSearchingAthletes && (
+                    <div className="px-4 py-3 text-sm text-gray-500">Searching VALD athletes...</div>
+                  )}
+                  {!isSearchingAthletes &&
+                    athleteOptions.map((athlete) => (
+                      <button
+                        key={athlete.vald_id}
+                        type="button"
+                        onClick={() => {
+                          setAthleteName(athlete.name);
+                          setSelectedAthlete(athlete);
+                          setAthleteOptions([]);
+                          setReportData(null);
+                          setInterpretations({});
+                        }}
+                        className="block w-full border-t border-gray-50 px-4 py-3 text-left hover:bg-orange-50"
+                      >
+                        <span className="block text-sm font-semibold text-gray-900">{athlete.name}</span>
+                        <span className="block text-xs text-gray-500">VALD athlete</span>
+                      </button>
+                    ))}
+                </div>
+              )}
+              {selectedAthlete && (
+                <p className="mt-2 text-xs font-medium text-green-700">Selected from VALD athlete list</p>
+              )}
             </div>
             <div>
               <label htmlFor="assessment-date" className="block text-sm font-semibold text-gray-700 mb-2">
@@ -260,6 +351,24 @@ export default function NameInputReport({ title }: NameInputReportProps) {
                 onChange={(event) => setAssessmentDate(event.target.value)}
                 className="w-full p-3 border rounded-md focus:ring-2 focus:ring-orange-500"
               />
+              {selectedAthlete && availableDates.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {availableDates.slice(0, 6).map((date) => (
+                    <button
+                      key={date}
+                      type="button"
+                      onClick={() => setAssessmentDate(date)}
+                      className={`rounded-full border px-3 py-1 text-xs font-medium ${
+                        assessmentDate === date
+                          ? "border-orange-600 bg-orange-50 text-orange-700"
+                          : "border-gray-200 text-gray-600 hover:border-orange-300"
+                      }`}
+                    >
+                      {formatDate(date)}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <div>
               <label htmlFor="sport" className="block text-sm font-semibold text-gray-700 mb-2">

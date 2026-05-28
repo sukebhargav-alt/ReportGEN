@@ -129,16 +129,51 @@ class ValdRepository:
         )
 
     async def lookup_athletes_by_name(self, name: str) -> list[dict[str, Any]]:
-        safe_name = name.replace('"', '\\"')
+        safe_name = name.replace("*", "").replace('"', '\\"')
         return await self.request(
             "GET",
             "vald_athletes",
             params={
                 "select": "vald_id,name",
-                "name": f"ilike.{safe_name}",
+                "name": f"ilike.%{safe_name}%",
                 "is_active": "eq.true",
+                "order": "name.asc",
+                "limit": "20",
             },
         ) or []
+
+    async def fetch_athlete_by_id(self, vald_id: str) -> dict[str, Any] | None:
+        rows = await self.request(
+            "GET",
+            "vald_athletes",
+            params={
+                "select": "vald_id,name",
+                "vald_id": f"eq.{vald_id}",
+                "is_active": "eq.true",
+                "limit": "1",
+            },
+        ) or []
+        return rows[0] if rows else None
+
+    async def fetch_assessment_dates(
+        self, vald_id: str, *, device: str | None = None
+    ) -> list[str]:
+        params = {
+            "select": "test_date",
+            "athlete_vald_id": f"eq.{vald_id}",
+            "test_date": "not.is.null",
+            "order": "test_date.desc",
+        }
+        if device:
+            params["device"] = f"eq.{device}"
+        rows = await self.request("GET", "vald_tests", params=params) or []
+        return list(
+            dict.fromkeys(
+                str(row["test_date"])[:10]
+                for row in rows
+                if row.get("test_date")
+            )
+        )
 
     async def fetch_tests_for_athlete(
         self,
