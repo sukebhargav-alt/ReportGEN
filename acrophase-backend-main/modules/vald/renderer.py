@@ -4,6 +4,7 @@ import asyncio
 import base64
 import os
 from copy import deepcopy
+from collections import Counter, defaultdict
 from typing import Any
 
 import markdown
@@ -42,6 +43,21 @@ def _render_pdf(buffer, data: dict[str, Any]) -> None:
         for test in joint.get("tests") or []
         for metric in test.get("metrics") or []
         if metric.get("status") == "red"
+    ]
+    concern_counts = Counter(item["joint"] for item in payload["concern_movements"])
+    concern_examples: dict[str, list[str]] = defaultdict(list)
+    for item in payload["concern_movements"]:
+        joint = item.get("joint")
+        metric = item.get("metric")
+        if joint and metric and len(concern_examples[joint]) < 2:
+            concern_examples[joint].append(str(metric))
+    payload["concern_summary"] = [
+        {
+            "joint": joint,
+            "count": count,
+            "examples": concern_examples.get(joint, []),
+        }
+        for joint, count in concern_counts.most_common()
     ]
 
     base_dir = os.path.dirname(os.path.abspath(__file__))

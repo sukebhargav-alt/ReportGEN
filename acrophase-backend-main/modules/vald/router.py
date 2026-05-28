@@ -3,12 +3,14 @@ from __future__ import annotations
 from collections import OrderedDict
 from datetime import date, datetime
 from io import BytesIO
+import json
 import logging
 import re
 import time
 from typing import Optional
 
-from fastapi import APIRouter, Body, Query
+from docx import Document
+from fastapi import APIRouter, Body, File, Form, Query, UploadFile
 from fastapi.responses import JSONResponse, StreamingResponse
 
 from modules.common.config import client
@@ -288,21 +290,24 @@ Joint/region: {joint_name}
 Measured data:
 {chr(10).join(metric_lines)}
 
-Write a joint-specific assessment in no more than 125 words, with the judgement and tone of a world-class sports physiotherapist.
-Use exactly these Markdown headings with one compact, high-value sentence beneath each:
-**Clinical Read**
-**Sport Relevance**
-**Load Management Priority**
-**Next Review**
+Write a joint-specific assessment in 170-220 words, with the judgement and tone of a world-class sports physiotherapist.
+Use exactly these Markdown headings:
+**What Looks Good**
+**Main Asymmetry**
+**Why It Matters For {sport}**
+**Performance Focus**
 
-Interpret patterns rather than listing every number. Prioritise the most relevant asymmetry direction, movement capacity, and sport demand for {sport}.
-Use only the supplied data. Describe observed left-right differences when shown, and connect them to movement tasks without overclaiming.
-Do not invent review intervals, treatment plans, exercise priorities, return-to-play advice, or predicted performance effects.
-Avoid phrases like "focus on addressing", "targeted interventions", "may influence performance", or "improve performance".
+Mention which movements look good or acceptable from a symmetry/balance perspective when their asymmetry is within the operational 10% band.
+For scalar metrics without right-left asymmetry labels, describe them as reported outputs rather than good, poor, high, or low unless a benchmark is supplied.
+Mention the highest-asymmetry movement(s), the direction, and why those joint actions matter in {sport}.
+It is acceptable to say that improving the flagged movement quality and right-left balance can help improve sport performance, provided you avoid injury diagnosis.
+Use only the supplied data. Describe observed left-right differences when shown, and connect them to sport-specific movement tasks.
+If you mention a percentage or value, keep it attached to the exact metric name provided in the measured data. Do not move a value from RFD, impulse, force, ROM, stiffness, RSI, or jump height onto another metric.
+Do not invent review intervals, return-to-play advice, or exact exercise prescriptions.
 Do not call a value significant, deficient, abnormal, risky, or injury-related without a supplied benchmark.
-Do not diagnose injury or prescribe treatment. Frame actions as options for coach, therapist, or practitioner review.
+Do not diagnose injury. Frame actions as performance-focused options for coach, therapist, or practitioner review.
 Green or red asymmetry screening labels use an operational 10% review threshold, not an age- or sport-specific VALD norm.
-No numerical VALD Norms percentile was supplied by the API, so explicitly state that absolute values need VALD Hub norms or an approved benchmark for age-matched interpretation.
+Briefly state that absolute strength/ROM quality still needs VALD Hub norms or an approved team benchmark for age-matched interpretation.
 """
         response = client.chat.completions.create(
             model="gpt-4o-mini",
@@ -310,18 +315,18 @@ No numerical VALD Norms percentile was supplied by the API, so explicitly state 
                 {
                     "role": "system",
                     "content": (
-                        "You write concise high-performance sports physiotherapy assessments. "
-                        "Be specific, clinically careful, and practical without diagnosing."
+                        "You write high-performance sports physiotherapy assessments. "
+                        "Be specific, practical, sport-relevant, and performance-focused without diagnosing injury."
                     ),
                 },
                 {"role": "user", "content": prompt},
             ],
-            temperature=0.2,
+            temperature=0.1,
         )
         interpretation = constrain_interpretation_language(
             response.choices[0].message.content or ""
         )
-        if len(interpretation.split()) > 145:
+        if len(interpretation.split()) > 245:
             interpretation = compact_interpretation(
                 interpretation, joint_name, sport
             )
@@ -345,6 +350,104 @@ async def generate_vald_final_pdf(data: dict = Body(...)):
             "Content-Disposition": f"attachment; filename={athlete_name}_VALD_Joint_Report.pdf"
         },
     )
+
+
+@router.post("/vald/draft-word")
+async def generate_vald_draft_word(data: dict = Body(...)):
+    doc = Document()
+    athlete = data.get("athlete") or {}
+    joints = data.get("joints") or []
+    interpretations = data.get("interpretations") or {}
+    athlete_name = str(athlete.get("name") or "Athlete")
+
+    doc.add_heading("VALD Report Draft", level=1)
+    doc.add_paragraph(
+        "Edit only the narrative inside each START/END interpretation block, then upload this document back into AcroReports to generate the final PDF."
+    )
+
+    profile_table = doc.add_table(rows=0, cols=2)
+    profile_table.style = "Table Grid"
+    for label, value in (
+        ("Athlete", athlete_name),
+        ("Sport", data.get("sport") or "-"),
+        ("Assessment date", data.get("assessment_date") or "-"),
+        ("Report type", data.get("report_type") or "VALD Report"),
+        ("Age", athlete.get("age_years") or "-"),
+        ("Height", f"{athlete.get('height_cm')} cm" if athlete.get("height_cm") else "-"),
+        ("Weight", f"{athlete.get('weight_kg')} kg" if athlete.get("weight_kg") else "-"),
+    ):
+        cells = profile_table.add_row().cells
+        cells[0].text = str(label)
+        cells[1].text = str(value)
+
+    for joint in joints:
+        joint_name = str(joint.get("joint") or "Section")
+        doc.add_page_break()
+        doc.add_heading(f"{joint_name} Assessment", level=2)
+        for test in joint.get("tests") or []:
+            doc.add_heading(str(test.get("test_type") or "Test"), level=3)
+            table = doc.add_table(rows=1, cols=6)
+            table.style = "Table Grid"
+            headers = ["Metric", "Value", "Right", "Left", "Unit", "Asymmetry"]
+            for cell, header in zip(table.rows[0].cells, headers):
+                cell.text = header
+            for metric in test.get("metrics") or []:
+                cells = table.add_row().cells
+                cells[0].text = str(metric.get("name") or "-")
+                cells[1].text = format_doc_value(metric.get("value"))
+                cells[2].text = format_doc_value(metric.get("right_value"))
+                cells[3].text = format_doc_value(metric.get("left_value"))
+                cells[4].text = str(metric.get("unit") or "-")
+                cells[5].text = compact_asymmetry_label(metric)
+
+        safe_joint = safe_doc_key(joint_name)
+        doc.add_paragraph(f"[START_VALD_INTERPRETATION_{safe_joint}]")
+        add_markdown_to_doc(doc, interpretations.get(joint_name, ""))
+        doc.add_paragraph(f"[END_VALD_INTERPRETATION_{safe_joint}]")
+
+    buffer = BytesIO()
+    doc.save(buffer)
+    buffer.seek(0)
+    filename = re.sub(r"[^A-Za-z0-9_-]+", "_", athlete_name).strip("_") or "Athlete"
+    return StreamingResponse(
+        buffer,
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers={"Content-Disposition": f"attachment; filename={filename}_VALD_Draft.docx"},
+    )
+
+
+@router.post("/vald/upload-final-word")
+async def parse_vald_final_word(
+    file: UploadFile = File(...), joints_json: str = Form(...)
+):
+    if not file.filename or not file.filename.lower().endswith(".docx"):
+        return JSONResponse(
+            status_code=400,
+            content=error_response(
+                message="Invalid file format",
+                errors=["Please upload a .docx file."],
+            ),
+        )
+
+    try:
+        joints = json.loads(joints_json)
+    except json.JSONDecodeError:
+        return JSONResponse(
+            status_code=400,
+            content=error_response(
+                message="Invalid report context",
+                errors=["joints_json must be valid JSON."],
+            ),
+        )
+
+    content = await file.read()
+    doc = Document(BytesIO(content))
+    section_map = {
+        safe_doc_key(str(joint.get("joint") or "Section")): str(joint.get("joint") or "Section")
+        for joint in joints
+    }
+    interpretations = extract_vald_interpretations(doc, section_map)
+    return {"interpretations": interpretations}
 
 
 def most_recent_per_test_type(tests: list[dict]) -> list[dict]:
@@ -433,6 +536,9 @@ def group_tests_by_joint(tests: list[dict]) -> list[dict]:
 def select_key_metrics(
     test_type: str, metrics: list[dict], limit: int = 5, device: str = ""
 ) -> list[dict]:
+    if device == "forcedecks":
+        return select_forcedecks_metrics(test_type, metrics, limit=limit)
+
     asymmetry = next(
         (
             metric
@@ -441,23 +547,15 @@ def select_key_metrics(
         ),
         None,
     )
-    if device == "forcedecks":
-        average_only = [
-            metric
-            for metric in metrics
-            if re.search(r"\bmean\b", str(metric.get("name") or ""), re.IGNORECASE)
-            and "ratio" not in str(metric.get("name") or "").lower()
-        ]
-    else:
-        average_only = [
-            metric
-            for metric in metrics
-            if "avg " in str(metric.get("name") or "").lower()
-            and not (
-                test_type.lower().startswith("strength:")
-                and "range of motion" in str(metric.get("name") or "").lower()
-            )
-        ]
+    average_only = [
+        metric
+        for metric in metrics
+        if "avg " in str(metric.get("name") or "").lower()
+        and not (
+            test_type.lower().startswith("strength:")
+            and "range of motion" in str(metric.get("name") or "").lower()
+        )
+    ]
     ranked = sorted(
         enumerate(average_only),
         key=lambda item: (
@@ -476,13 +574,16 @@ def select_key_metrics(
                 "name": key[0],
                 "value": metric.get("value") if not side_match else None,
                 "unit": metric.get("unit"),
+                "right_values": [],
+                "left_values": [],
                 "status": "neutral",
                 "status_label": "Measured",
                 "reference_note": "VALD Norms percentile not available through this API response.",
             }
         if side_match:
             side = side_match.group(1).lower()
-            rows[key][f"{side}_value"] = metric.get("value")
+            rows[key][f"{side}_values"].append(metric.get("value"))
+            rows[key][f"{side}_value"] = average_numeric(rows[key][f"{side}_values"])
     selected = [
         row
         for row in list(rows.values())[:limit]
@@ -510,17 +611,181 @@ def select_key_metrics(
     return selected
 
 
+def select_forcedecks_metrics(
+    test_type: str, metrics: list[dict], limit: int = 5
+) -> list[dict]:
+    selected: list[dict] = []
+    used: set[tuple[str, str | None]] = set()
+    for display_name, patterns in forcedecks_metric_specs(test_type)[:limit]:
+        candidates = matching_forcedecks_metrics(metrics, patterns)
+        row = forcedecks_metric_row(display_name, candidates)
+        if not row:
+            continue
+        key = (row["name"], row.get("unit"))
+        if key in used:
+            continue
+        used.add(key)
+        selected.append(row)
+    return selected
+
+
+def forcedecks_metric_specs(test_type: str) -> list[tuple[str, tuple[str, ...]]]:
+    normalized = re.sub(r"[^a-z0-9]+", "", test_type.lower())
+    if normalized in {"cmj", "abcmj"}:
+        return [
+            ("Jump Height (Imp-Mom)", ("jump height (imp-mom)",)),
+            ("RSI-modified", ("rsi-modified",)),
+            ("CMJ Stiffness", ("cmj stiffness", "lower-limb stiffness")),
+            ("Concentric RFD - 200ms", ("concentric rfd - 200ms",)),
+            ("Takeoff Peak Force", ("takeoff peak force",)),
+        ]
+    if normalized == "sj":
+        return [
+            ("Jump Height (Imp-Mom)", ("jump height (imp-mom)",)),
+            ("RSI-modified", ("rsi-modified",)),
+            ("Lower-Limb Stiffness", ("lower-limb stiffness", "landing stiffness")),
+            ("Concentric RFD - 200ms", ("concentric rfd - 200ms",)),
+            ("Takeoff Peak Force", ("takeoff peak force",)),
+        ]
+    if normalized == "imtp":
+        return [
+            ("Peak Force", ("peak force",)),
+            ("Force at 100ms", ("force at 100ms",)),
+            ("Force at 150ms", ("force at 150ms",)),
+            ("Force at 200ms", ("force at 200ms",)),
+            ("Baseline Force", ("baseline force",)),
+            ("Peak RFD", ("peak rfd",)),
+        ]
+    if normalized == "dj":
+        return [
+            ("Jump Height (Imp-Mom)", ("jump height (imp-mom)",)),
+            ("RSI", ("rsi",)),
+            ("Contact Time", ("contact time",)),
+            ("Takeoff Peak Force", ("takeoff peak force",)),
+        ]
+    if normalized in {"shldisoi", "shldisoy", "shldisot"}:
+        return [
+            ("Peak Vertical Force", ("peak vertical force",)),
+            ("RFD - 200ms", ("rfd - 200ms",)),
+            ("Start Time to Peak Force", ("start time to peak force",)),
+        ]
+    if normalized in {"slsb", "qsb"}:
+        return [
+            ("CoP Range ML", ("cop range ml", "cop range (ml)", "ml range")),
+            ("CoP Range AP", ("cop range ap", "cop range (ap)", "ap range")),
+            ("Mean Velocity", ("mean velocity",)),
+            ("Total Excursion", ("total excursion",)),
+            ("Area of CoP Ellipse", ("area of cop ellipse", "cop ellipse")),
+        ]
+    return [
+        ("Jump Height (Imp-Mom)", ("jump height (imp-mom)",)),
+        ("RSI-modified", ("rsi-modified",)),
+        ("Concentric Mean Force", ("concentric mean force",)),
+        ("Positive Takeoff Impulse", ("positive takeoff impulse",)),
+        ("Takeoff Peak Force", ("takeoff peak force",)),
+    ]
+
+
+def matching_forcedecks_metrics(
+    metrics: list[dict], patterns: tuple[str, ...]
+) -> list[dict]:
+    exact_matches: list[dict] = []
+    contains_matches: list[dict] = []
+    for metric in metrics:
+        name = str(metric.get("name") or "")
+        base = strip_side(name).lower()
+        if should_skip_forcedecks_candidate(base):
+            continue
+        for pattern in patterns:
+            pattern = pattern.lower()
+            if base == pattern:
+                exact_matches.append(metric)
+                break
+            if pattern in base:
+                contains_matches.append(metric)
+                break
+    return exact_matches or contains_matches
+
+
+def forcedecks_metric_row(display_name: str, candidates: list[dict]) -> dict | None:
+    if not candidates:
+        return None
+    row = {
+        "name": display_name,
+        "unit": next((metric.get("unit") for metric in candidates if metric.get("unit")), None),
+        "value_values": [],
+        "right_values": [],
+        "left_values": [],
+        "status": "neutral",
+        "status_label": "Measured",
+        "reference_note": "Selected ForceDecks key metric; absolute quality needs VALD Hub norms or team benchmarks.",
+    }
+    for metric in candidates:
+        name = str(metric.get("name") or "")
+        side_match = re.search(r"\s*\((Right|Left)\)\s*$", name, flags=re.IGNORECASE)
+        if side_match:
+            side = side_match.group(1).lower()
+            row[f"{side}_values"].append(metric.get("value"))
+        else:
+            row["value_values"].append(metric.get("value"))
+
+    row["right_value"] = average_numeric(row["right_values"])
+    row["left_value"] = average_numeric(row["left_values"])
+    row["value"] = average_numeric(row["value_values"])
+    if row["right_value"] is not None and row["left_value"] is not None:
+        asymmetry_value = bilateral_asymmetry(row)
+        screened = add_metric_status({"name": "Asymmetry", "value": asymmetry_value})
+        row.update(
+            {
+                "asymmetry_value": asymmetry_value,
+                "asymmetry_unit": "%",
+                "direction": asymmetry_direction(row),
+                "status": screened.get("status"),
+                "status_label": screened.get("status_label"),
+                "reference_note": "Calculated from displayed bilateral ForceDecks values; operational <=10% screening band.",
+            }
+        )
+    elif row["value"] is None:
+        return None
+    return row
+
+
+def strip_side(name: str) -> str:
+    return re.sub(r"\s*\((Right|Left)\)\s*$", "", name, flags=re.IGNORECASE).strip()
+
+
+def should_skip_forcedecks_candidate(base_name: str) -> bool:
+    return any(
+        term in base_name
+        for term in (
+            "ratio",
+            " in inches",
+            " / bm",
+            " / bw",
+            "relative",
+            "flight time",
+            "imp-dis",
+            "50ms",
+            "p1 ",
+            "p2 ",
+        )
+    )
+
+
 def metric_priority(test_type: str, name: str, device: str = "") -> int:
     label = name.lower()
     if "asymmetry" in label:
         return 120
     if device == "forcedecks":
         priorities = (
-            ("concentric mean force", 115),
-            ("eccentric mean force", 110),
-            ("landing mean force", 105),
-            ("mean power", 100),
-            ("mean impulse", 95),
+            ("concentric mean force", 125),
+            ("eccentric mean force", 120),
+            ("positive takeoff impulse", 115),
+            ("concentric impulse", 110),
+            ("landing rfd", 105),
+            ("landing impulse", 100),
+            ("stiffness", 95),
+            ("mean landing force", 90),
             ("mean", 80),
         )
         return next((score for term, score in priorities if term in label), 20)
@@ -541,6 +806,55 @@ def metric_priority(test_type: str, name: str, device: str = "") -> int:
         ("avg time to peak force", 70),
     )
     return next((score for term, score in priorities if term in label), 10)
+
+
+def is_forcedecks_report_metric(name: str) -> bool:
+    label = name.lower()
+    if not re.search(r"\((right|left)\)\s*$", name, flags=re.IGNORECASE):
+        return False
+    if any(
+        term in label
+        for term in (
+            "ratio",
+            "peak",
+            "maximum",
+            "max ",
+            " min ",
+            "minimum",
+            "50ms",
+            "100ms",
+            "p1 ",
+            "p2 ",
+        )
+    ):
+        return False
+    if ":" in name:
+        return False
+    return any(
+        term in label
+        for term in (
+            "concentric mean force",
+            "eccentric mean force",
+            "mean landing force",
+            "positive takeoff impulse",
+            "concentric impulse",
+            "landing rfd",
+            "landing impulse",
+            "stiffness",
+        )
+    )
+
+
+def average_numeric(values: list) -> float | None:
+    numbers = []
+    for value in values:
+        try:
+            numbers.append(float(value))
+        except (TypeError, ValueError):
+            continue
+    if not numbers:
+        return None
+    return sum(numbers) / len(numbers)
 
 
 def display_metric_name(name: str) -> str:
@@ -611,6 +925,112 @@ def format_metric_for_prompt(test_type: str, metric: dict) -> str:
     ).strip()
 
 
+def safe_doc_key(name: str) -> str:
+    return re.sub(r"[^A-Za-z0-9_]+", "_", name).strip("_") or "Section"
+
+
+def format_doc_value(value) -> str:
+    if value is None:
+        return "-"
+    return format_metric_value_for_text(value)
+
+
+def format_metric_value_for_text(value) -> str:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return str(value or "-")
+    return f"{number:,.2f}".rstrip("0").rstrip(".")
+
+
+def compact_asymmetry_label(metric: dict) -> str:
+    value = metric.get("asymmetry_value")
+    if value is None:
+        return "-"
+    suffix = ""
+    if metric.get("direction") == "Towards Right":
+        suffix = "R"
+    elif metric.get("direction") == "Towards Left":
+        suffix = "L"
+    return f"{format_metric_value_for_text(value)}{metric.get('asymmetry_unit') or '%'}{suffix}"
+
+
+def add_markdown_to_doc(doc: Document, content: str) -> None:
+    if not content.strip():
+        doc.add_paragraph("")
+        return
+    for raw_line in content.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        heading_match = re.match(r"^\*\*(.+?)\*\*$", line)
+        if heading_match:
+            doc.add_heading(heading_match.group(1), level=3)
+            continue
+        paragraph = doc.add_paragraph()
+        parts = re.split(r"(\*\*.*?\*\*)", line)
+        for part in parts:
+            if part.startswith("**") and part.endswith("**"):
+                paragraph.add_run(part[2:-2]).bold = True
+            else:
+                paragraph.add_run(part)
+
+
+def paragraph_to_markdown(paragraph) -> str:
+    text = ""
+    for run in paragraph.runs:
+        if not run.text:
+            continue
+        text += f"**{run.text}**" if run.bold else run.text
+    if not text.strip():
+        return ""
+    style_name = (paragraph.style.name or "").lower()
+    if "heading" in style_name:
+        clean = text.replace("**", "").strip()
+        if clean:
+            return f"**{clean}**"
+    return text.strip()
+
+
+def extract_vald_interpretations(doc: Document, section_map: dict[str, str]) -> dict[str, str]:
+    interpretations: dict[str, str] = {}
+    current_key: str | None = None
+    accumulator: list[str] = []
+
+    def flush() -> None:
+        nonlocal accumulator, current_key
+        if current_key and current_key in section_map:
+            content = "\n\n".join(line for line in accumulator if line.strip()).strip()
+            interpretations[section_map[current_key]] = content
+        accumulator = []
+        current_key = None
+
+    for paragraph in doc.paragraphs:
+        text = paragraph.text.strip()
+        start = re.search(r"\[START_VALD_INTERPRETATION_(.*?)\]", text)
+        end = re.search(r"\[END_VALD_INTERPRETATION_(.*?)\]", text)
+        if start:
+            flush()
+            current_key = start.group(1)
+            remainder = text.replace(start.group(0), "").strip()
+            if remainder:
+                accumulator.append(remainder)
+            continue
+        if end:
+            remainder = text.replace(end.group(0), "").strip()
+            if remainder:
+                accumulator.append(remainder)
+            flush()
+            continue
+        if current_key:
+            markdown = paragraph_to_markdown(paragraph)
+            if markdown:
+                accumulator.append(markdown)
+
+    flush()
+    return interpretations
+
+
 def compact_interpretation(text: str, joint_name: str, sport: str) -> str:
     response = client.chat.completions.create(
         model="gpt-4o-mini",
@@ -626,14 +1046,14 @@ def compact_interpretation(text: str, joint_name: str, sport: str) -> str:
                 "role": "user",
                 "content": f"""
 Condense this {joint_name} interpretation for a one-page {sport} report.
-Use exactly these four Markdown headings and one brief, expert sentence beneath each:
-**Clinical Read**
-**Sport Relevance**
-**Load Management Priority**
-**Next Review**
+Use exactly these four Markdown headings:
+**What Looks Good**
+**Main Asymmetry**
+**Why It Matters For {sport}**
+**Performance Focus**
 
-Maximum 125 words total. Retain the most relevant bilateral/asymmetry observation.
-State that numerical VALD Norms or approved benchmarks are needed for absolute interpretation.
+Maximum 180 words total. Retain one positive movement observation, the main asymmetry, why that joint action matters in {sport}, and how improving the flagged movement quality can support performance.
+State briefly that numerical VALD Norms or approved benchmarks are needed for absolute interpretation.
 Do not diagnose injury or introduce a new benchmark.
 
 Original interpretation:
@@ -666,6 +1086,8 @@ def joint_from_test_type(test_type: str) -> str:
             return joint
     if any(term in normalized for term in ("jump", "squat", "countermovement")):
         return "Lower Body"
+    if normalized in {"sj", "cmj", "abcmj", "dj", "hj"}:
+        return "Lower Body"
     return "Whole Body"
 
 
@@ -679,6 +1101,13 @@ def constrain_interpretation_language(content: str) -> str:
         (r"\bdeficien(?:t|cy)\b", "difference"),
         (r"\bdeficit\b", "difference"),
         (r"\bdeficits\b", "differences"),
+        (r"\bcommendable\b", "good from a symmetry perspective"),
+        (r"\bsolid explosive power\b", "useful jump output"),
+        (r"\bsolid explosive capability\b", "reported explosive output"),
+        (r"\bsolid foundation in vertical power\b", "reported vertical jump output"),
+        (r"\bgood from a symmetry perspective symmetry\b", "well-balanced symmetry"),
+        (r"\bjump height .*? are good from a symmetry perspective\b", "jump height values are reported"),
+        (r"\bexcellent\b", "good from a symmetry perspective"),
         (r"\bacceptable limits\b", "the operational screening band"),
         (
             r"\b(?:elevated |increased |potential )?risk of (?:an? )?(?:overuse )?injur(?:y|ies)\b",
@@ -686,57 +1115,28 @@ def constrain_interpretation_language(content: str) -> str:
         ),
         (r"\binjuries\b", "clinical concerns"),
         (r"\binjury\b", "clinical concern"),
-        (r"\bmay impact performance\b", "should be reviewed in context"),
-        (r"\bcould impact performance\b", "should be reviewed in context"),
-        (r"\bcan impact performance\b", "should be reviewed in context"),
-        (r"\bmay impact\b", "should be reviewed alongside"),
-        (r"\bcould impact\b", "should be reviewed alongside"),
-        (r"\bcan impact\b", "should be reviewed alongside"),
-        (r"\bmay affect\b", "should be reviewed alongside"),
-        (r"\bcould affect\b", "should be reviewed alongside"),
-        (r"\bcan affect\b", "should be reviewed alongside"),
         (r"\bpotential areas\b", "areas"),
         (r"\bpotential area\b", "area"),
         (r"\bpotential imbalances\b", "observed asymmetry patterns"),
         (r"\bpotential imbalance\b", "observed asymmetry pattern"),
-        (r"\baddressing\b", "reviewing"),
-        (r"\benhance\b", "inform"),
-        (r"\bimprove\b", "inform"),
-        (r"\boptim(?:al|ize|ise|izing|ising)\b", "high-quality"),
+        (r"\ba area\b", "an area"),
         (r"\breturn-to-play\b", "sport participation"),
         (r"\b\d+\s*-\s*\d+\s*weeks?\b", "a planned retest window"),
-        (r"\bmay influence\b", "should be reviewed alongside"),
-        (r"\bcould influence\b", "should be reviewed alongside"),
-        (r"\bcan influence\b", "should be reviewed alongside"),
         (r"\btargeted interventions\b", "practitioner-led training decisions"),
         (r"\binterventions\b", "training decisions"),
-        (r"\bto inform overall stability and performance\b", "as part of practitioner review"),
-        (r"\band agility during play\b", "during play"),
-        (r"\bfocus on reviewing\b", "Prioritise practitioner review of"),
-        (r"\bfocus on\b", "Prioritise review of"),
         (r"\bis recommended\b", "can be considered by the practitioner"),
         (r"\bare recommended\b", "can be considered by the practitioner"),
-        (r"\bensure balanced strength development\b", "support balanced practitioner decision-making"),
-        (r"\bbalanced strength development\b", "balanced practitioner decision-making"),
-        (r"\bstroke power\b", "stroke demands"),
-        (r"\bperformance metrics\b", "assessment metrics"),
-        (r"\bperformance strategies\b", "practitioner review strategies"),
-        (r"\bcrucial for performance\b", "relevant to sport demands"),
-        (r"\bshould be reviewed\b", "are appropriate for review"),
-        (r"\bwarrant careful monitoring\b", "are appropriate for practitioner monitoring"),
-        (r"\bwarrant monitoring\b", "are appropriate for practitioner monitoring"),
-        (r"\bwarrant review\b", "are appropriate for practitioner review"),
         (r"\bprevent compensatory patterns\b", "observe compensatory patterns"),
         (r"\bprevent\b", "observe"),
-        (r"\bensure balanced loading\b", "support balanced loading decisions"),
-        (r"\bensure balanced strength and function\b", "support balanced practitioner decision-making"),
-        (r"\bensure balanced performance\b", "support balanced practitioner decision-making"),
         (r"\breduce potential compensatory patterns\b", "observe compensatory patterns"),
         (r"\breduce compensatory patterns\b", "observe compensatory patterns"),
         (r"\bFurther assessment should occur\b", "Further assessment can be considered"),
-        (r"\bwith a Prioritise review of\b", "with practitioner review of"),
-        (r"\bPrioritize monitoring\b", "Practitioner monitoring can consider"),
-        (r"\bPrioritise monitoring\b", "Practitioner monitoring can consider"),
+        (r"\bTo high-quality performance\b", "For performance"),
+        (r"\bto high-quality performance\b", "for performance"),
+        (
+            r"\bit can be considered by the practitioner that ([^.]+?) focuses on\b",
+            r"\1 can focus on",
+        ),
     )
     safe_content = content
     for pattern, replacement in replacements:

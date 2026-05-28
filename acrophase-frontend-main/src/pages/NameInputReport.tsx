@@ -5,9 +5,11 @@ import {
   CalendarDays,
   Download,
   Dumbbell,
+  FileText,
   Ruler,
   Sparkles,
   Trophy,
+  Upload,
   UserRound,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
@@ -118,9 +120,13 @@ export default function NameInputReport({ title }: NameInputReportProps) {
   const [isLoading, setIsLoading] = React.useState(false);
   const [isGenerating, setIsGenerating] = React.useState(false);
   const [isDownloadingPdf, setIsDownloadingPdf] = React.useState(false);
+  const [isDownloadingWord, setIsDownloadingWord] = React.useState(false);
+  const [isUploadingWord, setIsUploadingWord] = React.useState(false);
+  const [wordDraftUploaded, setWordDraftUploaded] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [reportData, setReportData] = React.useState<ReportData | null>(null);
   const [interpretations, setInterpretations] = React.useState<Record<string, string>>({});
+  const wordUploadRef = React.useRef<HTMLInputElement | null>(null);
   const sectionKey = title.toLowerCase().includes("force")
     ? "forcedecks"
     : "dynamometer";
@@ -181,6 +187,7 @@ export default function NameInputReport({ title }: NameInputReportProps) {
     setError(null);
     setReportData(null);
     setInterpretations({});
+    setWordDraftUploaded(false);
 
     try {
       const query = new URLSearchParams({
@@ -232,10 +239,71 @@ export default function NameInputReport({ title }: NameInputReportProps) {
         throw new Error(data?.message || "Unable to generate interpretations.");
       }
       setInterpretations(data.interpretations || {});
+      setWordDraftUploaded(false);
     } catch (err: any) {
       setError(err.message || "Unable to generate interpretations.");
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const downloadDraftWord = async () => {
+    if (!reportData || Object.keys(interpretations).length === 0) return;
+    setIsDownloadingWord(true);
+    setError(null);
+    try {
+      const response = await fetch(`${BACKEND_URL}/vald/draft-word`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          athlete: reportData.athlete,
+          joints,
+          interpretations,
+          report_type: title,
+          sport: reportData.context.sport,
+          assessment_date: reportData.context.assessment_date,
+        }),
+      });
+      if (!response.ok) {
+        throw new Error("Unable to create the draft Word document.");
+      }
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${reportData.athlete.name.replace(/\s+/g, "_")}_VALD_Draft.docx`;
+      link.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      setError(err.message || "Unable to create the draft Word document.");
+    } finally {
+      setIsDownloadingWord(false);
+    }
+  };
+
+  const uploadFinalWord = async (file?: File | null) => {
+    if (!reportData || !file) return;
+    setIsUploadingWord(true);
+    setError(null);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("joints_json", JSON.stringify(joints));
+      const response = await fetch(`${BACKEND_URL}/vald/upload-final-word`, {
+        method: "POST",
+        body: formData,
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.message || "Unable to read the uploaded Word document.");
+      }
+      setInterpretations(data.interpretations || {});
+      setWordDraftUploaded(true);
+    } catch (err: any) {
+      setError(err.message || "Unable to read the uploaded Word document.");
+    } finally {
+      setIsUploadingWord(false);
+      if (wordUploadRef.current) wordUploadRef.current.value = "";
     }
   };
 
@@ -327,6 +395,7 @@ export default function NameInputReport({ title }: NameInputReportProps) {
                           setAthleteOptions([]);
                           setReportData(null);
                           setInterpretations({});
+                          setWordDraftUploaded(false);
                         }}
                         className="block w-full border-t border-gray-50 px-4 py-3 text-left hover:bg-orange-50"
                       >
@@ -435,6 +504,37 @@ export default function NameInputReport({ title }: NameInputReportProps) {
                     {isGenerating ? "Generating..." : "Generate joint interpretations"}
                   </button>
                   <button
+                    onClick={downloadDraftWord}
+                    disabled={Object.keys(interpretations).length === 0 || isDownloadingWord}
+                    className={`inline-flex items-center justify-center gap-2 rounded-md px-5 py-3 font-medium ${
+                      Object.keys(interpretations).length > 0 && !isDownloadingWord
+                        ? "border border-gray-300 text-gray-800 hover:bg-gray-50"
+                        : "border border-gray-200 text-gray-400 cursor-not-allowed"
+                    }`}
+                  >
+                    <FileText size={17} />
+                    {isDownloadingWord ? "Building Word..." : "Export draft Word document"}
+                  </button>
+                  <input
+                    ref={wordUploadRef}
+                    type="file"
+                    accept=".docx"
+                    className="hidden"
+                    onChange={(event) => uploadFinalWord(event.target.files?.[0])}
+                  />
+                  <button
+                    onClick={() => wordUploadRef.current?.click()}
+                    disabled={!reportData || isUploadingWord}
+                    className={`inline-flex items-center justify-center gap-2 rounded-md px-5 py-3 font-medium ${
+                      reportData && !isUploadingWord
+                        ? "border border-blue-600 text-blue-700 hover:bg-blue-50"
+                        : "border border-gray-200 text-gray-400 cursor-not-allowed"
+                    }`}
+                  >
+                    <Upload size={17} />
+                    {isUploadingWord ? "Reading Word..." : "Upload final Word document"}
+                  </button>
+                  <button
                     onClick={downloadFinalPdf}
                     disabled={Object.keys(interpretations).length === 0 || isDownloadingPdf}
                     className={`inline-flex items-center justify-center gap-2 rounded-md px-5 py-3 font-medium ${
@@ -447,6 +547,11 @@ export default function NameInputReport({ title }: NameInputReportProps) {
                     {isDownloadingPdf ? "Building PDF..." : "Download final PDF"}
                   </button>
                 </div>
+                {wordDraftUploaded && (
+                  <p className="mt-3 text-sm font-medium text-blue-700">
+                    Final Word document uploaded. The PDF will use the edited Word content.
+                  </p>
+                )}
               </div>
 
               <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -544,7 +649,7 @@ export default function NameInputReport({ title }: NameInputReportProps) {
                                     Metric
                                   </th>
                                   <th className="px-4 py-3 text-right text-gray-700 font-semibold">
-                                    Right
+                                    Value / Right
                                   </th>
                                   <th className="px-4 py-3 text-right text-gray-700 font-semibold">
                                     Left
@@ -567,10 +672,14 @@ export default function NameInputReport({ title }: NameInputReportProps) {
                                       {metric.name}
                                     </td>
                                     <td className="px-4 py-3 text-right tabular-nums text-gray-900">
-                                      {formatMetricValue(metric.right_value)}
+                                      {metric.right_value === null || metric.right_value === undefined
+                                        ? formatMetricValue(metric.value)
+                                        : formatMetricValue(metric.right_value)}
                                     </td>
                                     <td className="px-4 py-3 text-right tabular-nums text-gray-900">
-                                      {formatMetricValue(metric.left_value)}
+                                      {metric.left_value === null || metric.left_value === undefined
+                                        ? "-"
+                                        : formatMetricValue(metric.left_value)}
                                     </td>
                                     <td className="px-4 py-3 text-gray-500">
                                       {metric.unit || "-"}
@@ -600,7 +709,7 @@ export default function NameInputReport({ title }: NameInputReportProps) {
                         )}
                         {test.available_metric_count && test.available_metric_count > test.metrics.length && (
                           <p className="mt-2 text-xs text-gray-500">
-                            Showing up to 5 bilateral average-result rows from {test.available_metric_count} source measurements; non-average measurements are excluded.
+                            Showing selected key metrics from {test.available_metric_count} source measurements; bilateral rows include asymmetry where right and left values are available.
                           </p>
                         )}
                       </div>

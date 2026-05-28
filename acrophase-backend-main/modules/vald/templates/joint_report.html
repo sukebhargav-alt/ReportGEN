@@ -98,40 +98,12 @@
         margin-right: 12px;
         min-width: 6px;
       }
-      .notice {
-        background: #fff7ed;
-        border: 1px solid #fed7aa;
-        border-left: 5px solid #ff8c00;
-        border-radius: 0 12px 12px 0;
-        color: #7c2d12;
-        font-size: 11px;
-        line-height: 1.65;
-        margin-top: 22px;
-        padding: 14px 18px;
-      }
-      .scope-grid { display: grid; gap: 12px; grid-template-columns: 1fr 1fr; margin-top: 18px; }
-      .scope-card {
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 10px;
-        color: #475569;
-        font-size: 11px;
-        padding: 13px 15px;
-      }
-      .scope-title {
-        color: #64748b;
-        font-size: 9px;
-        font-weight: 800;
-        letter-spacing: 1px;
-        margin-bottom: 5px;
-        text-transform: uppercase;
-      }
       .concerns {
         background: #fff;
         border: 1px solid #fee2e2;
         border-radius: 12px;
-        margin-top: 19px;
-        padding: 15px 16px;
+        margin-top: 18px;
+        padding: 17px 18px;
       }
       .concern-title {
         align-items: center;
@@ -148,26 +120,28 @@
         height: 8px;
         width: 8px;
       }
-      .concern-grid { display: grid; gap: 7px; grid-template-columns: repeat(2, 1fr); }
+      .concern-grid { display: grid; gap: 9px; grid-template-columns: repeat(2, 1fr); }
       .concern-item {
-        align-items: center;
+        align-items: flex-start;
         background: #fff7f7;
         border-radius: 7px;
         display: flex;
+        flex-direction: column;
+        gap: 5px;
         justify-content: space-between;
-        padding: 8px 10px;
+        padding: 10px 11px;
       }
-      .concern-movement { color: #334155; font-size: 10px; font-weight: 700; }
+      .concern-movement { color: #0f172a; font-size: 11px; font-weight: 800; }
       .concern-pill {
         background: #fee2e2;
         border-radius: 10px;
         color: #991b1b;
-        font-size: 9px;
+        font-size: 9.5px;
         font-weight: 800;
-        margin-left: 7px;
         padding: 3px 7px;
         white-space: nowrap;
       }
+      .concern-examples { color: #64748b; font-size: 8.8px; line-height: 1.35; }
       .concern-caption { color: #64748b; font-size: 9px; margin-top: 9px; }
       .joint-meta { color: #64748b; font-size: 11px; font-weight: 600; margin-left: auto; }
       .assessment-layout {
@@ -204,7 +178,7 @@
         text-transform: uppercase;
         z-index: 1;
       }
-      .interpretation { font-size: 10.8px; line-height: 1.48; position: relative; z-index: 1; }
+      .interpretation { font-size: 10.9px; line-height: 1.45; position: relative; z-index: 1; }
       .interpretation p { margin: 4px 0; }
       .interpretation strong { color: #0f172a; }
       .test-block { margin: 0 0 12px; page-break-inside: avoid; }
@@ -316,24 +290,18 @@
           </div>
         </div>
       </div>
-      <div class="notice">
-        <strong>Reference context:</strong> Asymmetry is displayed in compact bilateral format, for example <strong>12.2%R</strong>.
-        Green and red markers apply an operational 10% screening band. Numerical age-matched VALD Norms
-        percentiles are not exposed through the retrieved API data and are not inferred here.
-      </div>
       <div class="section-heading"><div class="section-accent"></div>Assessment Overview</div>
-      <div class="scope-grid">
-        <div class="scope-card"><div class="scope-title">Report Scope</div>Only paired right/left average values recorded on {{ data.assessment_date or "the selected assessment date" }} are shown.</div>
-        <div class="scope-card"><div class="scope-title">Interpretation Frame</div>Technical narrative is grouped joint by joint and considered within {{ data.sport or "the specified sport" }} performance demands.</div>
-      </div>
       <div class="concerns">
         <div class="concern-title"><span class="concern-dot"></span>Areas of Concern for Review</div>
-        {% if data.concern_movements %}
+        {% if data.concern_summary %}
         <div class="concern-grid">
-          {% for item in data.concern_movements[:6] %}
+          {% for item in data.concern_summary %}
           <div class="concern-item">
-            <span class="concern-movement">{{ item.joint }} - {{ item.metric }}</span>
-            <span class="concern-pill">{{ item.asymmetry_value | metric_value }}{{ item.asymmetry_unit }}{% if item.direction == "Towards Right" %}R{% elif item.direction == "Towards Left" %}L{% endif %}</span>
+            <span class="concern-movement">{{ item.joint }}</span>
+            <span class="concern-pill">{{ item.count }} asymmetr{{ "y" if item.count == 1 else "ies" }}</span>
+            {% if item.examples %}
+            <span class="concern-examples">Examples: {{ item.examples | join(", ") }}</span>
+            {% endif %}
           </div>
           {% endfor %}
         </div>
@@ -370,9 +338,14 @@
                     <span class="metric-unit">{{ metric.unit or "-" }}</span>
                   </div>
                   <div class="metric-body">
+                    {% if metric.get("right_value") is not none and metric.get("left_value") is not none %}
                     <span class="side-box"><span class="side-label">R</span><span class="side-value">{{ metric.get("right_value") | metric_value }}</span></span>
                     <span class="side-box"><span class="side-label">L</span><span class="side-value">{{ metric.get("left_value") | metric_value }}</span></span>
                     <span class="asym-tag status-{{ metric.status or 'green' }}">{{ metric.get("asymmetry_value") | metric_value }}{{ metric.get("asymmetry_unit") or "%" }}{% if metric.get("direction") == "Towards Right" %}R{% elif metric.get("direction") == "Towards Left" %}L{% endif %}</span>
+                    {% else %}
+                    <span class="side-box"><span class="side-label">Value</span><span class="side-value">{{ metric.get("value") | metric_value }}</span></span>
+                    <span class="asym-tag status-neutral">Key Metric</span>
+                    {% endif %}
                   </div>
                 </div>
                 {% endfor %}
@@ -380,7 +353,7 @@
             </div>
             {% endfor %}
           </div>
-          <div class="metric-note">Showing paired average measures only; non-average or unpaired source measurements are excluded.</div>
+          <div class="metric-note">Showing selected key metrics for this test; bilateral rows include compact asymmetry where VALD supplies right and left values.</div>
         </div>
         <div class="insight-box">
           <div class="interpretation-title">Sports Physiotherapy Interpretation</div>
