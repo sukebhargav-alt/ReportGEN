@@ -310,14 +310,15 @@ Joint/region: {joint_name}
 Measured data:
 {chr(10).join(metric_lines)}
 
-Write a joint-specific assessment in 185-240 words, with the judgement and tone of a world-class sports physiotherapist working with elite athletes.
+Write a joint-specific assessment in 230-300 words, with the judgement, language and prioritisation of a world-class sports physiotherapist working with elite athletes.
 Use exactly these Markdown headings:
 **What Looks Good**
 **Main Asymmetry**
 **Why It Matters For {sport}**
 **Performance Focus**
 
-Make the writing practical and coach-facing: first say which movements are currently usable or well balanced, then identify the movement that most deserves attention.
+Make the writing practical, coach-facing and athlete-readable: first say which movements are currently usable or well balanced, then identify the movement that most deserves attention.
+Use concise but high-quality clinical reasoning. Avoid generic statements like "this is important"; explain what the finding means for movement strategy, load sharing and repeatability in {sport}.
 Mention which movements look good or acceptable from a symmetry/balance perspective when their asymmetry is within the operational 10% band.
 For scalar metrics without right-left asymmetry labels, describe them as reported outputs rather than good, poor, high, or low unless a benchmark is supplied.
 Mention the highest-asymmetry movement(s), the direction, and why those joint actions matter in {sport}. Explain the likely performance expression: acceleration, braking, landing, cutting, rotation, reaching, striking, repeat-effort quality, or load sharing, as appropriate to the joint and sport.
@@ -337,7 +338,8 @@ Briefly state that absolute strength/ROM quality still needs VALD Hub norms or a
                     "role": "system",
                     "content": (
                         "You write high-performance sports physiotherapy assessments. "
-                        "Be specific, practical, sport-relevant, and performance-focused without diagnosing injury."
+                        "Be specific, practical, sport-relevant, and performance-focused without diagnosing injury. "
+                        "Sound like an experienced elite sports physiotherapist, not a generic analytics summary."
                     ),
                 },
                 {"role": "user", "content": prompt},
@@ -347,7 +349,7 @@ Briefly state that absolute strength/ROM quality still needs VALD Hub norms or a
         interpretation = constrain_interpretation_language(
             response.choices[0].message.content or ""
         )
-        compact_limit = 340 if "force" in report_type.lower() else 245
+        compact_limit = 320 if "force" in report_type.lower() else 310
         if len(interpretation.split()) > compact_limit:
             interpretation = compact_interpretation(
                 interpretation, joint_name, sport, report_type
@@ -965,7 +967,7 @@ Region: {joint_name}
 Measured ForceDecks data:
 {chr(10).join(metric_lines)}
 
-Write a polished ForceDecks assessment in 205-260 words using exactly these Markdown headings:
+Write a polished ForceDecks assessment in 235-300 words using exactly these Markdown headings:
 **Overall Performance Snapshot**
 **Key Performance Highlights**
 **Test-by-Test Breakdown**
@@ -977,7 +979,7 @@ Follow this content format:
 - Test-by-Test Breakdown: describe each available test briefly, using exact metric names and values only when supplied.
 - Performance Focus: explain how improving the flagged physical quality can support {sport} performance, including likely transfer to acceleration, jumping, landing, deceleration, re-acceleration, or repeated effort.
 
-Use the report style of a world-class sports physiotherapist in an elite performance lab: direct, specific, readable, and useful for athlete and coach. Do not diagnose injury or give return-to-sport clearance.
+Use the report style of a world-class sports physiotherapist in an elite performance lab: direct, specific, readable, and useful for athlete and coach. Make it feel like a practitioner is translating force-plate findings into performance decisions, not simply listing metrics. Do not diagnose injury or give return-to-sport clearance.
 For scalar metrics such as Jump Height or RSI, describe them as reported outputs unless a benchmark is supplied.
 For bilateral metrics, describe whether symmetry is good when asymmetry is within the operational 10% band.
 If you mention a percentage or value, keep it attached to the exact metric name provided in the measured data.
@@ -1104,7 +1106,7 @@ def compact_interpretation(
             "Retain the ForceDecks report format, one useful performance strength, "
             "the main asymmetry, test-by-test context, and how the focus can support sport performance."
         )
-        maximum = "240"
+        maximum = "275"
     else:
         headings = f"""**What Looks Good**
 **Main Asymmetry**
@@ -1114,7 +1116,7 @@ def compact_interpretation(
             "Retain one positive movement observation, the main asymmetry, why that joint action matters "
             f"in {sport}, and how improving the flagged movement quality can support performance."
         )
-        maximum = "180"
+        maximum = "240"
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[

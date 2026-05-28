@@ -123,7 +123,7 @@
         align-items: center;
         background:
           radial-gradient(circle, #182235 58%, transparent 59%),
-          conic-gradient(var(--orange) calc(var(--score) * 1%), rgba(255,255,255,.14) 0);
+          conic-gradient(#22c55e calc(var(--score) * 1%), rgba(255,255,255,.14) 0);
         border-radius: 50%;
         display: flex;
         height: 62px;
@@ -133,7 +133,17 @@
       .score-ring.risk {
         background:
           radial-gradient(circle, #182235 58%, transparent 59%),
-          conic-gradient(#f97316 calc(var(--score) * 1%), rgba(255,255,255,.14) 0);
+          conic-gradient(#f59e0b calc(var(--score) * 1%), rgba(255,255,255,.14) 0);
+      }
+      .score-ring.risk.high {
+        background:
+          radial-gradient(circle, #182235 58%, transparent 59%),
+          conic-gradient(#fb7185 calc(var(--score) * 1%), rgba(255,255,255,.14) 0);
+      }
+      .score-ring.risk.controlled {
+        background:
+          radial-gradient(circle, #182235 58%, transparent 59%),
+          conic-gradient(#38bdf8 calc(var(--score) * 1%), rgba(255,255,255,.14) 0);
       }
       .score-number {
         color: #fff;
@@ -155,11 +165,14 @@
         margin-top: 4px;
       }
       .score-caption {
-        color: #ffb347;
+        color: #86efac;
         font-size: 9px;
         font-weight: 750;
         margin-top: 2px;
       }
+      .score-caption.risk-caption { color: #fcd34d; }
+      .score-caption.high-caption { color: #fda4af; }
+      .score-caption.controlled-caption { color: #7dd3fc; }
       .section-heading {
         align-items: center;
         border-bottom: 2px solid #f1f5f9;
@@ -474,11 +487,11 @@
             </div>
           </div>
           <div class="cover-score-card">
-            <div class="score-ring risk" style="--score: {{ summary.risk_score or 0 }}"><div class="score-number">{{ summary.risk_score or 0 }}</div></div>
+            <div class="score-ring risk {{ 'high' if summary.risk_label == 'High' else 'controlled' if summary.risk_label == 'Controlled' else '' }}" style="--score: {{ summary.risk_score or 0 }}"><div class="score-number">{{ summary.risk_score or 0 }}</div></div>
             <div>
               <div class="score-label">Asymmetry Score</div>
               <div class="score-title">{{ summary.risk_label or "Controlled" }} review priority</div>
-              <div class="score-caption">{{ summary.red_count or 0 }} flagged / {{ summary.total_metrics or 0 }} displayed</div>
+              <div class="score-caption risk-caption {{ 'high-caption' if summary.risk_label == 'High' else 'controlled-caption' if summary.risk_label == 'Controlled' else '' }}">{{ summary.red_count or 0 }} flagged / {{ summary.total_metrics or 0 }} displayed</div>
             </div>
           </div>
         </div>
