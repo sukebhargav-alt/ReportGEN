@@ -237,7 +237,7 @@ def build_display_groups(joint: dict[str, Any], report_type: str) -> list[dict[s
         ]
     else:
         specs = [
-            ("ROM", ("rom", "°", "deg")),
+            ("ROM", ("rom", "deg")),
             ("Strength", ("force", "rate of force", "impulse", "rfd")),
         ]
 

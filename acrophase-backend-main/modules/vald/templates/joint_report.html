@@ -17,15 +17,15 @@
         --green: #2f8c49;
         --amber: #f58a1f;
         --red: #d71920;
-        --shadow: 0 8px 28px rgba(17, 24, 33, .08);
+        --shadow: 0 8px 24px rgba(17, 24, 33, .065);
       }
       body {
         margin: 0;
         background: #eeeeee;
         color: var(--ink);
         font-family: -apple-system, BlinkMacSystemFont, Inter, sans-serif;
-        font-size: 10.5px;
-        line-height: 1.35;
+        font-size: 10.2px;
+        line-height: 1.42;
       }
       .sheet {
         background:
@@ -34,7 +34,7 @@
         border: 1px solid #cfcfcf;
         box-shadow: 0 2px 7px rgba(0,0,0,.18);
         min-height: 1068px;
-        padding: 26px 34px 22px;
+        padding: 28px 36px 24px;
         position: relative;
         page-break-after: always;
       }
@@ -43,7 +43,7 @@
         align-items: flex-start;
         display: flex;
         justify-content: space-between;
-        margin-bottom: 28px;
+        margin-bottom: 30px;
       }
       .brand {
         align-items: center;
@@ -69,9 +69,9 @@
         top: 11px;
       }
       .brand-name {
-        font-size: 22px;
+        font-size: 20px;
         font-weight: 900;
-        letter-spacing: 5px;
+        letter-spacing: 4.2px;
       }
       .brand-sub {
         color: var(--muted);
@@ -83,7 +83,7 @@
       .report-title {
         font-size: 9px;
         font-weight: 900;
-        letter-spacing: 3px;
+        letter-spacing: 2.2px;
         text-align: right;
         text-transform: uppercase;
       }
@@ -98,8 +98,8 @@
       }
       .cover-grid {
         display: grid;
-        gap: 30px;
-        grid-template-columns: 1fr 1.12fr;
+        gap: 34px;
+        grid-template-columns: 1fr 1.08fr;
       }
       .kicker {
         color: var(--orange);
@@ -109,13 +109,13 @@
         text-transform: uppercase;
       }
       .athlete-name {
-        font-size: 42px;
+        font-size: 39px;
         font-weight: 900;
         letter-spacing: -1.2px;
-        line-height: .94;
-        margin: 9px 0 18px;
+        line-height: 1;
+        margin: 10px 0 18px;
         text-transform: uppercase;
-        word-spacing: 8px;
+        word-spacing: 5px;
       }
       .orange-rule { background: var(--orange); height: 2px; width: 28px; }
       .bio-row {
@@ -146,6 +146,14 @@
         font-weight: 750;
         gap: 8px;
       }
+      .sport-mark {
+        background: var(--orange);
+        border-radius: 2px;
+        display: inline-block;
+        height: 8px;
+        transform: rotate(-18deg);
+        width: 12px;
+      }
       .profile-strip {
         background: rgba(255, 255, 255, .9);
         border: 1px solid var(--line);
@@ -158,11 +166,11 @@
       }
       .profile-cell {
         border-right: 1px solid var(--line);
-        min-height: 80px;
-        padding: 16px 14px;
+        min-height: 78px;
+        padding: 17px 15px;
       }
       .profile-cell:last-child { border-right: 0; }
-      .profile-value { font-size: 17px; font-weight: 850; line-height: 1.08; }
+      .profile-value { font-size: 15.5px; font-weight: 850; line-height: 1.18; }
       .score-panel {
         background: rgba(255,255,255,.82);
         border: 1px solid var(--line);
@@ -170,7 +178,7 @@
         box-shadow: var(--shadow);
         display: grid;
         grid-template-columns: repeat(2, 1fr);
-        min-height: 230px;
+        min-height: 226px;
         padding: 24px 22px;
       }
       .score-box {
@@ -197,30 +205,32 @@
         border-radius: 50%;
         display: flex;
         flex-direction: column;
-        height: 132px;
+        height: 124px;
         justify-content: center;
-        width: 132px;
+        width: 124px;
       }
       .score-ring.risk { background: radial-gradient(circle, #fff 57%, transparent 58%), conic-gradient(var(--orange-dark) calc(var(--score) * 1%), #eceaea 0); }
-      .score-number { font-size: 44px; font-weight: 900; letter-spacing: -2px; line-height: .9; }
+      .score-number { font-size: 40px; font-weight: 900; letter-spacing: -1.3px; line-height: .92; }
       .score-denom { font-size: 14px; font-weight: 700; }
       .score-state { color: var(--green); font-size: 14px; font-weight: 900; letter-spacing: 1.6px; margin-top: 14px; text-transform: uppercase; }
       .score-state.warn { color: var(--orange); }
       .score-caption { color: var(--muted); font-size: 10px; margin-top: 5px; }
       .cover-summary {
+        align-items: stretch;
         border: 1px solid var(--line);
         border-radius: 9px;
         display: grid;
-        gap: 22px;
+        gap: 24px;
         grid-template-columns: .95fr 1.35fr;
         margin-top: 24px;
-        padding: 18px;
+        min-height: 360px;
+        padding: 20px;
       }
       .section-heading {
         font-size: 12px;
         font-weight: 900;
-        letter-spacing: 1.3px;
-        margin-bottom: 14px;
+        letter-spacing: 1.1px;
+        margin-bottom: 15px;
         text-transform: uppercase;
       }
       .body-zone {
@@ -231,14 +241,14 @@
       .body-map {
         align-items: center;
         display: flex;
-        height: 260px;
+        height: 292px;
         justify-content: center;
         position: relative;
       }
       .body-silhouette {
         background: linear-gradient(180deg, #d9d9d9, #efefef);
         border-radius: 44% 44% 38% 38%;
-        height: 215px;
+        height: 238px;
         opacity: .78;
         position: relative;
         width: 56px;
@@ -259,7 +269,7 @@
         height: 120px;
         left: 12px;
         position: absolute;
-        top: 178px;
+        top: 198px;
         width: 32px;
       }
       .map-dot {
@@ -271,11 +281,11 @@
         right: 23px;
         width: 18px;
       }
-      .dot-shoulder { top: 48px; }
-      .dot-hip { top: 122px; }
-      .dot-knee { top: 180px; }
-      .dot-ankle { top: 232px; }
-      .region-list { display: flex; flex-direction: column; gap: 0; justify-content: center; }
+      .dot-shoulder { top: 52px; }
+      .dot-hip { top: 135px; }
+      .dot-knee { top: 205px; }
+      .dot-ankle { top: 260px; }
+      .region-list { display: flex; flex-direction: column; gap: 8px; justify-content: center; }
       .region-row {
         align-items: center;
         background: #fff;
@@ -283,10 +293,10 @@
         border-radius: 9px;
         display: grid;
         grid-template-columns: 38px 1fr auto;
-        min-height: 60px;
-        padding: 9px 10px;
+        min-height: 62px;
+        padding: 10px 12px;
       }
-      .region-row + .region-row { margin-top: -1px; }
+      .region-row + .region-row { margin-top: 0; }
       .icon-round {
         align-items: center;
         border: 1px solid #dedede;
@@ -316,12 +326,15 @@
         background: linear-gradient(135deg, #fff 0%, #fff9f1 100%);
         border: 1px solid #e2d8ca;
         border-radius: 9px;
-        padding: 22px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 24px;
       }
       .highlight-item {
         align-items: center;
         display: grid;
-        gap: 14px;
+        gap: 16px;
         grid-template-columns: 44px 1fr;
         margin-top: 16px;
       }
@@ -336,7 +349,7 @@
         justify-content: center;
         width: 44px;
       }
-      .highlight-text { color: #252a31; font-size: 11px; line-height: 1.48; }
+      .highlight-text { color: #252a31; font-size: 10.6px; line-height: 1.55; }
       .page-footer {
         align-items: center;
         bottom: 12px;
@@ -345,10 +358,10 @@
         font-size: 7.5px;
         font-weight: 800;
         justify-content: space-between;
-        left: 34px;
-        letter-spacing: 1.2px;
+        left: 36px;
+        letter-spacing: 1px;
         position: absolute;
-        right: 34px;
+        right: 36px;
         text-transform: uppercase;
       }
       .page-footer strong { color: var(--orange); }
@@ -357,15 +370,15 @@
         background:
           radial-gradient(circle at 92% 0%, rgba(236,111,18,.10), transparent 25%),
           #fff;
-        padding-top: 24px;
+        padding-top: 26px;
       }
       .joint-top {
         align-items: flex-start;
         display: flex;
         justify-content: space-between;
-        margin-bottom: 14px;
+        margin-bottom: 16px;
       }
-      .joint-title-row { align-items: center; display: flex; gap: 16px; }
+      .joint-title-row { align-items: center; display: flex; gap: 15px; min-width: 0; }
       .joint-icon {
         align-items: center;
         background: radial-gradient(circle at 32% 20%, #ffad60, var(--orange));
@@ -374,17 +387,18 @@
         display: flex;
         font-size: 28px;
         font-weight: 900;
-        height: 58px;
+        height: 52px;
         justify-content: center;
-        width: 58px;
+        min-width: 52px;
+        width: 52px;
       }
       .joint-title {
-        font-size: 29px;
+        font-size: 25px;
         font-weight: 900;
-        letter-spacing: -.35px;
-        line-height: .95;
+        letter-spacing: -.15px;
+        line-height: 1.06;
         text-transform: uppercase;
-        word-spacing: 5px;
+        word-spacing: 2px;
       }
       .joint-subtitle {
         color: var(--orange);
@@ -395,10 +409,10 @@
         text-transform: uppercase;
       }
       .date-block {
-        font-size: 10px;
+        font-size: 8.8px;
         font-weight: 900;
-        letter-spacing: 1px;
-        line-height: 1.9;
+        letter-spacing: .8px;
+        line-height: 1.7;
         text-align: right;
         text-transform: uppercase;
       }
@@ -408,85 +422,85 @@
         border-radius: 9px;
         display: grid;
         grid-template-columns: .7fr .7fr 1.25fr 1.45fr;
-        min-height: 102px;
+        min-height: 108px;
         overflow: hidden;
       }
       .overview-cell {
         border-right: 1px solid var(--line);
-        padding: 17px 16px;
+        padding: 18px 17px;
       }
       .overview-cell:last-child { border-right: 0; }
-      .big-number { color: var(--red); font-size: 30px; font-weight: 900; letter-spacing: -1px; line-height: 1; text-align: center; }
-      .big-label { font-size: 8px; font-weight: 900; letter-spacing: 1.2px; line-height: 1.35; margin-top: 8px; text-align: center; text-transform: uppercase; }
-      .severity-word { color: var(--red); font-size: 28px; font-weight: 900; letter-spacing: -.6px; line-height: 1; text-align: center; text-transform: uppercase; }
+      .big-number { color: var(--red); font-size: 27px; font-weight: 900; letter-spacing: -.8px; line-height: 1; text-align: center; }
+      .big-label { font-size: 7.4px; font-weight: 900; letter-spacing: .9px; line-height: 1.35; margin-top: 8px; text-align: center; text-transform: uppercase; }
+      .severity-word { color: var(--red); font-size: 24px; font-weight: 900; letter-spacing: -.2px; line-height: 1.05; text-align: center; text-transform: uppercase; }
       .severity-word.moderate { color: var(--orange); }
       .severity-word.controlled { color: var(--green); }
-      .overview-copy { color: #303640; font-size: 10px; line-height: 1.45; margin-top: 8px; }
+      .overview-copy { color: #303640; font-size: 9.4px; line-height: 1.5; margin-top: 8px; }
       .detail-title {
         align-items: center;
         display: flex;
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 900;
         gap: 10px;
-        letter-spacing: 1.2px;
-        margin: 15px 0 9px;
+        letter-spacing: 1px;
+        margin: 17px 0 11px;
         text-transform: uppercase;
       }
       .detail-title:after { background: var(--orange); content: ""; height: 1px; width: 18px; }
-      .legend { align-items: center; color: var(--muted); display: flex; font-size: 8px; gap: 18px; justify-content: flex-end; margin-top: -24px; }
+      .legend { align-items: center; color: var(--muted); display: flex; font-size: 7.4px; gap: 16px; justify-content: flex-end; margin-top: -27px; margin-bottom: 11px; }
       .legend span:before { border-radius: 50%; content: ""; display: inline-block; height: 9px; margin-right: 6px; vertical-align: -1px; width: 9px; }
       .legend .ok:before { background: var(--green); }
       .legend .mod:before { background: var(--orange); }
       .legend .hi:before { background: var(--red); }
       .group-grid {
         display: grid;
-        gap: 16px;
+        gap: 18px;
         grid-template-columns: repeat(2, 1fr);
       }
       .metric-group {
         background: rgba(255,255,255,.94);
         border: 1px solid #e4e4e4;
         border-radius: 9px;
-        padding: 14px;
+        padding: 15px;
       }
       .group-name {
         align-items: center;
         display: flex;
-        font-size: 12px;
+        font-size: 10.8px;
         font-weight: 900;
         justify-content: space-between;
-        letter-spacing: 1px;
-        margin-bottom: 11px;
+        letter-spacing: .8px;
+        margin-bottom: 12px;
         text-transform: uppercase;
       }
       .group-name small { color: var(--muted); font-size: 8px; font-weight: 800; letter-spacing: .8px; }
       .metric-card {
         border: 1px solid #e1e1e1;
         border-radius: 8px;
-        margin-top: 10px;
-        min-height: 92px;
-        padding: 10px 11px 9px;
+        margin-top: 11px;
+        min-height: 104px;
+        padding: 12px 13px 11px;
       }
-      .metric-title { font-size: 10px; font-weight: 900; letter-spacing: .4px; text-transform: uppercase; }
-      .metric-test { color: var(--muted); font-size: 8px; margin-top: 2px; }
+      .metric-title { font-size: 9px; font-weight: 900; letter-spacing: .25px; line-height: 1.25; text-transform: uppercase; }
+      .metric-test { color: var(--muted); font-size: 7.6px; line-height: 1.25; margin-top: 3px; min-height: 18px; }
       .metric-values {
         align-items: center;
         display: grid;
-        gap: 12px;
-        grid-template-columns: 1fr auto 1fr;
-        margin-top: 9px;
+        gap: 10px;
+        grid-template-columns: minmax(68px, 1fr) auto minmax(68px, 1fr);
+        margin-top: 10px;
       }
-      .value-block { font-size: 18px; font-weight: 900; line-height: 1; }
+      .value-block { font-size: 16px; font-weight: 900; line-height: 1.05; min-width: 0; }
       .value-block.right { text-align: right; }
       .side-label { color: var(--muted); display: block; font-size: 7px; font-weight: 900; letter-spacing: 1px; margin-top: 4px; text-transform: uppercase; }
       .asym-chip {
         border: 1px solid var(--green);
         border-radius: 5px;
         color: var(--green);
-        font-size: 10px;
+        font-size: 9px;
         font-weight: 900;
-        min-width: 46px;
-        padding: 5px 6px;
+        min-width: 48px;
+        padding: 5px 7px;
         text-align: center;
       }
       .asym-chip.moderate { border-color: var(--orange); color: var(--orange); }
@@ -496,7 +510,7 @@
         display: grid;
         gap: 8px;
         grid-template-columns: 28px 1fr 28px;
-        margin-top: 9px;
+        margin-top: 10px;
       }
       .range-label { color: var(--muted); font-size: 7px; }
       .range-line {
@@ -526,25 +540,25 @@
       }
       .bottom-grid {
         display: grid;
-        gap: 16px;
+        gap: 18px;
         grid-template-columns: 1.75fr .75fr;
-        margin-top: 12px;
+        margin-top: 15px;
       }
       .heatmap, .impact-card {
         border: 1px solid #e1e1e1;
         border-radius: 9px;
-        min-height: 104px;
-        padding: 13px;
+        min-height: 116px;
+        padding: 15px;
       }
       .heat-row {
         align-items: end;
         display: grid;
-        gap: 9px;
+        gap: 10px;
         grid-template-columns: repeat(8, 1fr);
         margin-top: 9px;
       }
       .heat-item { text-align: center; }
-      .heat-label { font-size: 6.5px; line-height: 1.08; min-height: 20px; }
+      .heat-label { font-size: 6.6px; line-height: 1.12; min-height: 24px; overflow-wrap: anywhere; }
       .heat-dot {
         background: var(--green);
         border-radius: 50%;
@@ -554,32 +568,30 @@
       }
       .heat-dot.moderate { background: var(--orange); box-shadow: 0 0 0 8px #ffe6cb; }
       .heat-dot.high { background: var(--red); box-shadow: 0 0 0 8px #ffd9d9; }
-      .impact-text { color: #343a43; font-size: 10px; line-height: 1.48; margin-top: 10px; }
+      .impact-text { color: #343a43; font-size: 9px; line-height: 1.5; margin-top: 10px; }
       .content-block {
         border: 1px solid #e1e1e1;
         border-radius: 9px;
-        margin-top: 11px;
-        max-height: 132px;
-        overflow: hidden;
-        padding: 12px 14px;
+        margin-top: 15px;
+        padding: 15px 16px;
       }
       .content-grid {
         display: grid;
-        gap: 12px;
+        gap: 14px 18px;
         grid-template-columns: repeat(2, 1fr);
       }
       .content-section h4 {
         color: var(--orange-dark);
-        font-size: 8px;
+        font-size: 7.4px;
         font-weight: 900;
-        letter-spacing: 1.2px;
-        margin: 0 0 6px;
+        letter-spacing: .9px;
+        margin: 0 0 7px;
         text-transform: uppercase;
       }
       .content-section p {
         color: #2e3540;
-        font-size: 8.8px;
-        line-height: 1.32;
+        font-size: 8.7px;
+        line-height: 1.42;
         margin: 0;
       }
     </style>
@@ -610,7 +622,7 @@
           <div class="athlete-name">{{ athlete.name or "Athlete" }}</div>
           <div class="orange-rule"></div>
           <div class="bio-row">
-            <div class="bio-item"><div class="mini-label">Sport</div><div class="bio-value">▰ {{ data.sport or "Not provided" }}</div></div>
+            <div class="bio-item"><div class="mini-label">Sport</div><div class="bio-value"><span class="sport-mark"></span>{{ data.sport or "Not provided" }}</div></div>
             <div class="bio-item"><div class="mini-label">Age</div><div class="bio-value">{{ athlete.age_years or "-" }}</div></div>
             <div class="bio-item"><div class="mini-label">Assessment Date</div><div class="bio-value">{{ data.assessment_date | report_date }}</div></div>
           </div>
@@ -664,9 +676,9 @@
         </div>
         <div class="highlight-panel">
           <div class="section-heading">Report Highlights</div>
-          <div class="highlight-item"><div class="highlight-icon">⌖</div><div class="highlight-text">Primary review focus: {{ data.concern_summary[0].joint if data.concern_summary else "no major flagged joint" }}{% if data.concern_summary and data.concern_summary[0].examples %} - {{ data.concern_summary[0].examples | join(" and ") }}{% endif %}.</div></div>
-          <div class="highlight-item"><div class="highlight-icon">↔</div><div class="highlight-text">{{ summary.red_count or 0 }} displayed metrics crossed the operational asymmetry screen; controlled metrics should be protected while flagged movements are reviewed.</div></div>
-          <div class="highlight-item"><div class="highlight-icon">↗</div><div class="highlight-text">{{ "ForceDecks outputs should be interpreted against VALD Hub norms or team benchmarks for readiness decisions." if is_force else "ROM and strength findings are grouped below so coaches can separate mobility limitations from force-production asymmetries." }}</div></div>
+          <div class="highlight-item"><div class="highlight-icon">1</div><div class="highlight-text">Primary review focus: {{ data.concern_summary[0].joint if data.concern_summary else "no major flagged joint" }}{% if data.concern_summary and data.concern_summary[0].examples %} - {{ data.concern_summary[0].examples | join(" and ") }}{% endif %}.</div></div>
+          <div class="highlight-item"><div class="highlight-icon">2</div><div class="highlight-text">{{ summary.red_count or 0 }} displayed metrics crossed the operational asymmetry screen; controlled metrics should be protected while flagged movements are reviewed.</div></div>
+          <div class="highlight-item"><div class="highlight-icon">3</div><div class="highlight-text">{{ "ForceDecks outputs should be interpreted against VALD Hub norms or team benchmarks for readiness decisions." if is_force else "ROM and strength findings are grouped below so coaches can separate mobility limitations from force-production asymmetries." }}</div></div>
         </div>
       </div>
       <div class="page-footer"><span><strong>AcroPhase</strong> Performance Lab</span><span>Data Powering Elite Performance</span><span>Page 1 of {{ total_pages }}</span></div>
@@ -695,7 +707,7 @@
       </div>
 
       <div class="detail-title">{{ "Test Metric Insights" if is_force else "Detailed Metric Insights" }}</div>
-      <div class="legend"><span class="ok">Within optimal range (≤10%)</span><span class="mod">Moderate (10-15%)</span><span class="hi">High (&gt;15%)</span></div>
+      <div class="legend"><span class="ok">Within range (&lt;=10%)</span><span class="mod">Moderate (10-15%)</span><span class="hi">High (&gt;15%)</span></div>
       <div class="group-grid">
         {% for group in joint.display_groups or [] %}
         <div class="metric-group">
@@ -755,7 +767,7 @@
           {% for item in sections[:4] %}
           <div class="content-section">
             <h4>{% if item.title == "What Looks Good" %}Performing Well{% elif item.title == "Main Asymmetry" %}Key Asymmetries{% elif item.title.startswith("Why") %}Sport Impact{% elif item.title == "Performance Focus" %}Development Focus{% else %}{{ item.title }}{% endif %}</h4>
-            <p>{{ item.body | truncate(175, True, "") }}</p>
+            <p>{{ item.body | truncate(210, True, "...") }}</p>
           </div>
           {% endfor %}
         </div>
