@@ -121,6 +121,10 @@ export function useCPET() {
 
   const generateInterpretations = useCallback(async () => {
     if (!processedData) return;
+    if (!BACKEND_URL) {
+      toast.error("Backend URL is not configured. Set VITE_BACKEND_URL and redeploy the frontend.");
+      return;
+    }
     setIsGenerating(true);
 
     // Use requestAnimationFrame-batched progress ticks to avoid stutter while
@@ -149,21 +153,42 @@ export function useCPET() {
           results: processedData.results,
         }),
       });
-      if (!res.ok) throw new Error("Failed to generate CPET interpretations.");
-      const data = await res.json();
+      const contentType = res.headers.get("content-type") || "";
+      const data = contentType.includes("application/json")
+        ? await res.json()
+        : { detail: await res.text() };
+
+      if (!res.ok) {
+        throw new Error(
+          data?.detail ||
+            data?.error ||
+            data?.message ||
+            "Failed to generate CPET interpretations.",
+        );
+      }
+
       setInterpretations(data.insights || null);
       cancelAnimationFrame(rafId);
       setProgress(100);
       setTimeout(() => {
         setIsGenerating(false);
         setProgress(0);
-        toast.success("CPET interpretations generated successfully!");
+        if (Array.isArray(data.warnings) && data.warnings.length > 0) {
+          toast.warning("CPET insights generated with partial section warnings. Please review and retry if needed.");
+        } else {
+          toast.success("CPET interpretations generated successfully!");
+        }
       }, 600);
     } catch (err: any) {
+      console.error(err);
       cancelAnimationFrame(rafId);
       setIsGenerating(false);
       setProgress(0);
-      toast.error(err.message || "Failed to generate CPET interpretations.");
+      const message =
+        err instanceof TypeError && err.message === "Failed to fetch"
+          ? `Could not reach the backend at ${BACKEND_URL}. Check that the backend is live and that FRONTEND_ORIGINS allows this frontend URL.`
+          : err.message || "Failed to generate CPET interpretations.";
+      toast.error(message);
     }
   }, [processedData]);
 

@@ -1,8 +1,9 @@
-from fastapi import APIRouter, UploadFile, File, Body, Form
+from fastapi import APIRouter, UploadFile, File, Body, Form, HTTPException
 from fastapi.responses import StreamingResponse
 from io import BytesIO
 import asyncio
 import json
+import logging
 import re
 from docx import Document
 from modules.common.config import client
@@ -13,6 +14,7 @@ from modules.cpet.comparison_prompts import build_comparison_prompt
 from modules.cpet.comparison_renderer import render_comparison_pdf
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 @router.post("/process_cpet_excel")
 async def process_cpet_excel(file: UploadFile = File(...)):
@@ -26,6 +28,15 @@ async def generate_cpet_interpretations(data: dict = Body(...)):
     profile = data.get("profile", {})
     results = data.get("results", [])
 
+    if not isinstance(results, list) or not results:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "No CPET result data was supplied. Process a CPET file before "
+                "generating ACSM insights."
+            ),
+        )
+
     systems = [
         "Overall Interpretation",
         "Ventilation System",
@@ -34,24 +45,57 @@ async def generate_cpet_interpretations(data: dict = Body(...)):
         "Metabolic System",
     ]
 
-    async def fetch_system(system_name: str) -> tuple[str, str]:
-        response = await asyncio.to_thread(
-            client.chat.completions.create,
-            model="gpt-4o-mini",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are an elite sports performance scientist leveraging ACSM standards.",
-                },
-                {"role": "user", "content": build_cpet_interpretation_prompt(system_name, profile, results)},
-            ],
-            temperature=0.25,
-        )
-        return system_name, response.choices[0].message.content or ""
+    semaphore = asyncio.Semaphore(2)
+
+    async def fetch_system(system_name: str) -> tuple[str, str, str | None]:
+        async with semaphore:
+            try:
+                response = await asyncio.to_thread(
+                    client.chat.completions.create,
+                    model="gpt-4o-mini",
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": "You are an elite sports performance scientist leveraging ACSM standards.",
+                        },
+                        {"role": "user", "content": build_cpet_interpretation_prompt(system_name, profile, results)},
+                    ],
+                    temperature=0.25,
+                )
+                return system_name, response.choices[0].message.content or "", None
+            except Exception as exc:
+                logger.exception("Failed to generate CPET ACSM insight for %s", system_name)
+                return system_name, "", str(exc)
 
     results_gathered = await asyncio.gather(*[fetch_system(s) for s in systems])
-    interpretations = {name: text for name, text in results_gathered}
-    return {"insights": interpretations}
+    interpretations: dict[str, str] = {}
+    warnings: list[dict[str, str]] = []
+
+    for system_name, text, error in results_gathered:
+        if error:
+            warnings.append(
+                {
+                    "section": system_name,
+                    "message": "AI service error while generating this section.",
+                }
+            )
+            interpretations[system_name] = (
+                f"{system_name} insight could not be generated on this attempt. "
+                "Please retry after confirming the backend AI service is available."
+            )
+        else:
+            interpretations[system_name] = text
+
+    if len(warnings) == len(systems):
+        raise HTTPException(
+            status_code=502,
+            detail=(
+                "Unable to generate ACSM insights because the backend AI service "
+                "failed for every section. Check OPENAI_API_KEY and Render backend logs, then retry."
+            ),
+        )
+
+    return {"insights": interpretations, "warnings": warnings}
 
 @router.post("/generate_cpet_final_pdf")
 async def generate_cpet_final_pdf(data: dict = Body(...)):
