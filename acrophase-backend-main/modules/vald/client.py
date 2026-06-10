@@ -82,10 +82,15 @@ class ValdApiClient:
 
     async def dynamo_tests(self, tenant_id: str, modified_from: str, page: int) -> Any:
         query = urlencode({"modifiedFromUTC": modified_from, "page": page})
-        return await self.request(
-            f"{self.host('extdynamo')}/v2022q2/teams/{tenant_id}/tests"
-            f"?{query}"
-        )
+        try:
+            return await self.request(
+                f"{self.host('extdynamo')}/v2022q2/teams/{tenant_id}/tests"
+                f"?{query}"
+            )
+        except httpx.HTTPStatusError as exc:
+            if exc.response.status_code == 404:
+                return []
+            raise
 
     async def dynamo_detail(self, tenant_id: str, test_id: str) -> Any:
         return await self.request(

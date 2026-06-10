@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from datetime import UTC, datetime
 from typing import Any
 
 import httpx
@@ -124,7 +125,13 @@ class ValdRepository:
     async def update_sync_state(self, device_name: str, last_synced_at: str) -> None:
         await self.upsert(
             "vald_sync_state",
-            [{"device_name": device_name, "last_synced_at": last_synced_at}],
+            [
+                {
+                    "device_name": device_name,
+                    "last_synced_at": last_synced_at,
+                    "updated_at": datetime.now(UTC).isoformat(),
+                }
+            ],
             on_conflict="device_name",
         )
 

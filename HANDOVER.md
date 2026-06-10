@@ -85,15 +85,15 @@ Expected application tables are defined in:
 - `acrophase-backend-main/vald_schema.sql`
 - `supabase/migrations/20260610090000_initialize_acrophase_database.sql`
 
-Current important issue:
+Database status verified on June 10, 2026:
 
-- The Supabase project configured in `render.yaml` did not contain the expected
-  application or VALD tables when checked on June 10, 2026.
-- A deployable Supabase migration was added on June 10, 2026. Configure the
-  GitHub integration working directory to the repository root (`.`), then check
-  its deployment logs to confirm the migration was applied.
-- Creating the schema does not migrate historical data from another Supabase
-  project. Historical VALD data must be migrated or freshly synchronized.
+- All expected application and VALD tables are available.
+- 241 VALD athletes, 810 tests, and 13,429 metrics are stored.
+- DynaMo and ForceDecks sync cursors are current.
+- A deployable migration is available for rebuilding or cloning the schema.
+- Historical data is part of the existing Supabase project transfer. Creating
+  a fresh project from the migration alone creates the schema but does not copy
+  the existing rows.
 
 Verify the configured project at any time:
 
@@ -119,10 +119,9 @@ Then verify:
 At the last handover check on June 10, 2026:
 
 - Git branch `main` was clean and matched `origin/main`.
-- Latest commit was `b98774c Fix CPET ACSM insight generation errors`.
+- The Supabase database schema and VALD data were verified successfully.
+- A full VALD sync completed without warnings or errors.
 - The assumed Render backend URL returned HTTP 503.
-- The configured Supabase project was reachable, but expected tables were
-  missing from its public schema.
 
 Review Render deployment logs and Supabase migration/deployment logs before
 considering production operational.

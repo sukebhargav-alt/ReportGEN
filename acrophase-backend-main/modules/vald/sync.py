@@ -226,8 +226,13 @@ class ValdSyncService:
                 break
             page += 1
 
-        if latest_modified != modified_from:
-            await self.repo.update_sync_state("dynamo", latest_modified)
+        if not errors:
+            next_sync_cursor = (
+                latest_modified
+                if latest_modified != modified_from
+                else datetime.now(UTC).isoformat()
+            )
+            await self.repo.update_sync_state("dynamo", next_sync_cursor)
 
         return {
             "testsUpserted": tests_upserted,
