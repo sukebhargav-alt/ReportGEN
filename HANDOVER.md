@@ -83,18 +83,24 @@ Expected application tables are defined in:
 
 - `acrophase-backend-main/supabase_schema.sql`
 - `acrophase-backend-main/vald_schema.sql`
+- `supabase/migrations/20260610090000_initialize_acrophase_database.sql`
 
 Current important issue:
 
 - The Supabase project configured in `render.yaml` did not contain the expected
   application or VALD tables when checked on June 10, 2026.
-- The GitHub integration does not currently deploy these SQL files because the
-  repository has no `supabase/migrations` directory.
-- Apply both schema files through the Supabase SQL Editor, or convert them into
-  timestamped files under `supabase/migrations` and configure the GitHub
-  integration working directory to the repository root.
+- A deployable Supabase migration was added on June 10, 2026. Configure the
+  GitHub integration working directory to the repository root (`.`), then check
+  its deployment logs to confirm the migration was applied.
 - Creating the schema does not migrate historical data from another Supabase
   project. Historical VALD data must be migrated or freshly synchronized.
+
+Verify the configured project at any time:
+
+```powershell
+cd acrophase-backend-main
+.\.venv\Scripts\python.exe scripts\verify_supabase.py
+```
 
 After the schema exists, run a full VALD sync:
 
